@@ -8,8 +8,8 @@ import SubmitConferenceModal from './SubmitConferenceModal';
 import SubmitEventModal from './SubmitEventModal';
 import { MONTHS } from '../constants';
 import { MonthOption, Conference, EventItem } from '../types';
-import { fetchConferences, fetchAllEvents, seedDatabase, createConference, createEvent } from '../services/db';
-import { Loader2, Database } from 'lucide-react';
+import { fetchConferences, fetchAllEvents, seedDatabase, createConference, createEvent, getConnectionStatus } from '../services/db';
+import { Loader2, Database, Wifi, WifiOff, AlertTriangle } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 
 const PublicHome: React.FC = () => {
@@ -23,6 +23,7 @@ const PublicHome: React.FC = () => {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSeeding, setIsSeeding] = useState(false);
+  const [dbStatus, setDbStatus] = useState<{status: string, message: string} | null>(null);
 
   // Modal State
   const [isSubmitConferenceModalOpen, setIsSubmitConferenceModalOpen] = useState(false);
@@ -32,6 +33,10 @@ const PublicHome: React.FC = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
+        // Check DB Status
+        const status = await getConnectionStatus();
+        setDbStatus(status);
+
         const [confsData, eventsData] = await Promise.all([
           fetchConferences(),
           fetchAllEvents()
@@ -209,7 +214,7 @@ const PublicHome: React.FC = () => {
         onSelect={handleSelectMonth} 
       />
 
-      <main className="container mx-auto px-4 md:px-6 py-8 md:py-12">
+      <main className="container mx-auto px-4 md:px-6 py-8 md:py-12 relative">
         {conferences.length === 0 && !isLoading ? (
             <div className="flex flex-col items-center justify-center py-20 border border-dashed border-white/10 rounded-2xl bg-white/[0.02]">
                 <Database size={48} className="text-gray-600 mb-4" />
@@ -254,6 +259,25 @@ const PublicHome: React.FC = () => {
       </main>
 
       <Footer />
+      
+      {/* Database Status Indicator */}
+      {dbStatus && (
+        <div className="fixed bottom-4 right-4 z-50 animate-fade-in-up">
+            <div className={`
+                flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-bold shadow-lg backdrop-blur-md
+                ${dbStatus.status === 'connected' ? 'bg-green-500/10 border-green-500/30 text-green-400' : ''}
+                ${dbStatus.status === 'missing_tables' ? 'bg-red-500/10 border-red-500/30 text-red-400' : ''}
+                ${dbStatus.status === 'demo' ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400' : ''}
+                ${dbStatus.status === 'error' ? 'bg-red-500/10 border-red-500/30 text-red-400' : ''}
+            `}>
+                {dbStatus.status === 'connected' && <Wifi size={12} />}
+                {dbStatus.status === 'missing_tables' && <AlertTriangle size={12} />}
+                {dbStatus.status === 'demo' && <WifiOff size={12} />}
+                {dbStatus.status === 'error' && <AlertTriangle size={12} />}
+                <span>{dbStatus.message}</span>
+            </div>
+        </div>
+      )}
 
       <SubmitConferenceModal 
         isOpen={isSubmitConferenceModalOpen} 

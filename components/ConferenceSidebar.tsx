@@ -11,7 +11,7 @@ interface ConferenceSidebarProps {
 
 const ConferenceSidebar: React.FC<ConferenceSidebarProps> = ({ conferences, selectedConferenceId, onSelect, onOpenSubmitModal }) => {
   return (
-    <div className="w-full lg:w-72 xl:w-80 flex-shrink-0 flex flex-col gap-6">
+    <div className="w-full lg:w-72 xl:w-80 flex-shrink-0 flex flex-col gap-6 lg:sticky lg:top-24 h-fit">
       <div>
         <div className="flex items-center justify-between mb-4 px-1">
           <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Conferences</h2>
@@ -33,6 +33,11 @@ const ConferenceSidebar: React.FC<ConferenceSidebarProps> = ({ conferences, sele
                             }
                         `}
                     >
+                        {/* Status Dot */}
+                        {isSelected && (
+                            <span className="absolute right-3 top-3 w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></span>
+                        )}
+
                         <div className={`font-bold mb-2 text-sm leading-snug transition-colors ${isSelected ? 'text-white' : 'text-gray-400 group-hover:text-gray-200'}`}>
                             {conf.name}
                         </div>
