@@ -186,7 +186,7 @@ export const fetchIndependentEvents = async (): Promise<EventItem[]> => {
 
 // Events
 export const createEvent = async (event: Omit<EventItem, 'id'>) => {
-  const fallback = { id: 'temp_' + Date.now(), ...event };
+  const fallback = { id: 'temp_' + Date.now(), ...event } as EventItem;
   
   if (!isDatabaseConfigured()) {
      alert("Database not configured. Using mock storage.");
@@ -194,12 +194,26 @@ export const createEvent = async (event: Omit<EventItem, 'id'>) => {
   }
 
   try {
-    // Handle compatibility fields for the DB if needed
+    // Sanitize payload to remove metadata fields not in DB (like submitter info)
+    // and ensure nulls for optional fields
     const payload = {
-      ...event,
-      // Ensure we have values for these if the DB expects them
-      locationName: event.venueName, 
-      link: event.registrationUrl
+      conferenceId: event.conferenceId || null,
+      title: event.title,
+      description: event.description || '',
+      category: event.category || null,
+      status: event.status || 'Draft',
+      date: event.date,
+      startTime: event.startTime,
+      endTime: event.endTime || null,
+      venueName: event.venueName,
+      locationName: event.locationName || event.venueName,
+      locationAddress: event.locationAddress || null,
+      host: event.host,
+      capacity: event.capacity || null,
+      registrationUrl: event.registrationUrl || null,
+      link: event.link || event.registrationUrl || null,
+      image: event.image || null,
+      tags: event.tags || []
     };
 
     const { data, error } = await supabase

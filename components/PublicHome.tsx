@@ -63,9 +63,22 @@ const PublicHome: React.FC = () => {
         }
 
         // Default selection if no URL param or not found
+        // Prefer published conferences
         if (confsData.length > 0 && !selectedConferenceId) {
-            const match = confsData.find(c => c.month === MONTHS[0].label.split(' ')[0] && c.year === MONTHS[0].year);
-            setSelectedConferenceId(match ? match.id : confsData[0].id);
+            const match = confsData.find(c => c.month === MONTHS[0].label.split(' ')[0] && c.year === MONTHS[0].year && c.status === 'Published');
+            const firstPublished = confsData.find(c => c.status === 'Published');
+            
+            if (match) {
+                 setSelectedConferenceId(match.id);
+            } else if (firstPublished) {
+                 setSelectedConferenceId(firstPublished.id);
+                 // Also sync month to this fallback
+                 const fallbackMonth = MONTHS.find(m => m.label.startsWith(firstPublished.month) && m.year === firstPublished.year);
+                 if (fallbackMonth) setSelectedMonth(fallbackMonth);
+            } else {
+                 // Absolute fallback (e.g. only Drafts exist or fresh DB)
+                 setSelectedConferenceId(confsData[0].id);
+            }
         }
       } catch (error) {
         console.error("Failed to load data", error);
@@ -128,13 +141,10 @@ const PublicHome: React.FC = () => {
         const confsData = await fetchConferences();
         setConferences(confsData);
         
-        // Optionally switch to the month of the new conference
-        const newMonthOption = MONTHS.find(m => m.label.startsWith(monthShort) && m.year === year);
-        if (newMonthOption) {
-            setSelectedMonth(newMonthOption);
-        }
+        // We do not switch to the new conference automatically since it's a Draft
+        // but we alert the user.
         
-        alert("Conference submitted successfully!");
+        alert("Conference submitted successfully! It is now pending review.");
     } catch (error) {
         console.error("Submission failed", error);
         alert("Failed to submit conference.");
@@ -169,8 +179,9 @@ const PublicHome: React.FC = () => {
   // Handler for month selection
   const handleSelectMonth = (month: MonthOption) => {
       setSelectedMonth(month);
-      // When month changes, try to auto-select first conference in that month
-      const confsInMonth = conferences.filter(c => c.month === month.label.split(' ')[0] && c.year === month.year);
+      // When month changes, try to auto-select first PUBLISHED conference in that month
+      const confsInMonth = conferences.filter(c => c.month === month.label.split(' ')[0] && c.year === month.year && c.status === 'Published');
+      
       if (confsInMonth.length > 0) {
           setSelectedConferenceId(confsInMonth[0].id);
           setSearchParams({ c: confsInMonth[0].id });
@@ -182,14 +193,14 @@ const PublicHome: React.FC = () => {
       }
   };
 
-  // Filtering Logic
+  // Filtering Logic - PUBLIC VIEW: SHOW ONLY PUBLISHED
   const filteredConferences = conferences.filter(
-    (c) => c.month === selectedMonth.label.split(' ')[0] && c.year === selectedMonth.year
+    (c) => c.month === selectedMonth.label.split(' ')[0] && c.year === selectedMonth.year && c.status === 'Published'
   );
 
   const displayedConferences = filteredConferences.length > 0 ? filteredConferences : [];
 
-  const filteredEvents = events.filter(e => e.conferenceId === selectedConferenceId);
+  const filteredEvents = events.filter(e => e.conferenceId === selectedConferenceId && e.status === 'Published');
 
   const selectedConference = conferences.find(c => c.id === selectedConferenceId) || conferences[0];
 
@@ -289,7 +300,7 @@ const PublicHome: React.FC = () => {
         isOpen={isSubmitEventModalOpen}
         onClose={() => setIsSubmitEventModalOpen(false)}
         onSubmit={handleSubmitEvent}
-        conferences={conferences}
+        conferences={conferences} // Pass all conferences so user can select draft ones if they really want, or just stick to list
         preSelectedConferenceId={selectedConferenceId}
       />
     </div>

@@ -7,7 +7,7 @@ import {
   deleteConference 
 } from '../../services/db';
 import { Conference } from '../../types';
-import { Plus, Edit2, Trash2, Search, X, Loader2, Eye, Calendar, Globe } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, X, Loader2, Eye, Save, Send } from 'lucide-react';
 import { MONTHS } from '../../constants';
 
 const ConferencesManager: React.FC = () => {
@@ -60,8 +60,7 @@ const ConferencesManager: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = async (status: 'Draft' | 'Published') => {
     try {
       // Auto-generate some derived fields for display if not manually set
       const derivedLocation = `${formData.city}, ${formData.country}`;
@@ -76,7 +75,8 @@ const ConferencesManager: React.FC = () => {
           location: derivedLocation,
           month: shortMonth,
           year: year,
-          dateRange: dateRange
+          dateRange: dateRange,
+          status: status // Override status based on button click
       };
 
       if (editingId) {
@@ -89,6 +89,15 @@ const ConferencesManager: React.FC = () => {
     } catch (error) {
       alert("Error saving conference");
     }
+  };
+
+  const onSaveClick = (status: 'Draft' | 'Published') => {
+      const form = document.getElementById('conference-form') as HTMLFormElement;
+      if (form && !form.checkValidity()) {
+          form.reportValidity();
+          return;
+      }
+      handleSave(status);
   };
 
   const handleDelete = async (id: string) => {
@@ -190,7 +199,7 @@ const ConferencesManager: React.FC = () => {
                     </button>
                 </div>
                 
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                <form id="conference-form" className="p-6 space-y-4" onSubmit={(e) => e.preventDefault()}>
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-400">Conference Name</label>
                         <input 
@@ -248,7 +257,7 @@ const ConferencesManager: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4">
                          <div className="space-y-2">
                             <label className="text-sm font-medium text-gray-400">Website URL</label>
                             <input 
@@ -258,17 +267,6 @@ const ConferencesManager: React.FC = () => {
                                 onChange={e => setFormData({...formData, websiteUrl: e.target.value})}
                                 placeholder="https://"
                             />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-400">Status</label>
-                            <select 
-                                className="w-full bg-background border border-white/10 rounded-lg px-4 py-2 text-white focus:border-purple-500 outline-none"
-                                value={formData.status}
-                                onChange={e => setFormData({...formData, status: e.target.value as any})}
-                            >
-                                <option value="Draft">Draft</option>
-                                <option value="Published">Published</option>
-                            </select>
                         </div>
                     </div>
 
@@ -293,20 +291,30 @@ const ConferencesManager: React.FC = () => {
                         />
                     </div>
 
-                    <div className="pt-4 flex justify-end gap-3">
+                    <div className="pt-4 flex justify-between items-center gap-3 border-t border-white/10">
                         <button 
                             type="button"
                             onClick={() => setIsModalOpen(false)}
-                            className="px-6 py-2 rounded-lg text-gray-400 hover:text-white font-medium"
+                            className="px-4 py-2 rounded-lg text-gray-400 hover:text-white font-medium hover:bg-white/5 transition-colors"
                         >
                             Cancel
                         </button>
-                        <button 
-                            type="submit"
-                            className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-2 rounded-lg font-bold transition-colors"
-                        >
-                            {editingId ? 'Save Changes' : 'Create Conference'}
-                        </button>
+                        <div className="flex gap-3">
+                            <button 
+                                type="button"
+                                onClick={() => onSaveClick('Draft')}
+                                className="flex items-center gap-2 border border-white/10 hover:bg-white/5 text-gray-300 px-4 py-2 rounded-lg font-bold transition-colors"
+                            >
+                                <Save size={16} /> Save as Draft
+                            </button>
+                            <button 
+                                type="button"
+                                onClick={() => onSaveClick('Published')}
+                                className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-6 py-2 rounded-lg font-bold transition-colors shadow-lg shadow-purple-900/20"
+                            >
+                                <Send size={16} /> {formData.status === 'Published' ? 'Update & Publish' : 'Publish Conference'}
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>

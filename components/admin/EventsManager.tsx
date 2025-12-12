@@ -7,7 +7,7 @@ import {
   fetchConferences 
 } from '../../services/db';
 import { EventItem, Conference } from '../../types';
-import { Plus, Edit2, Trash2, Search, X, Filter, Loader2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, X, Filter, Loader2, Save, Send } from 'lucide-react';
 
 const EventsManager: React.FC = () => {
   const [events, setEvents] = useState<EventItem[]>([]);
@@ -64,10 +64,9 @@ const EventsManager: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = async (status: 'Draft' | 'Published') => {
     try {
-      const finalData = { ...formData };
+      const finalData = { ...formData, status };
       // If conferenceId is empty string, make it undefined
       if (!finalData.conferenceId) delete finalData.conferenceId;
 
@@ -81,6 +80,15 @@ const EventsManager: React.FC = () => {
     } catch (error) {
       alert("Error saving event");
     }
+  };
+
+  const onSaveClick = (status: 'Draft' | 'Published') => {
+      const form = document.getElementById('event-form') as HTMLFormElement;
+      if (form && !form.checkValidity()) {
+          form.reportValidity();
+          return;
+      }
+      handleSave(status);
   };
 
   const handleDelete = async (id: string) => {
@@ -196,7 +204,7 @@ const EventsManager: React.FC = () => {
                     </button>
                 </div>
                 
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                <form id="event-form" className="p-6 space-y-4" onSubmit={(e) => e.preventDefault()}>
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-400">Event Title</label>
                         <input 
@@ -300,7 +308,7 @@ const EventsManager: React.FC = () => {
                         />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4">
                          <div className="space-y-2">
                             <label className="text-sm font-medium text-gray-400">Registration URL</label>
                             <input 
@@ -310,33 +318,32 @@ const EventsManager: React.FC = () => {
                                 onChange={e => setFormData({...formData, registrationUrl: e.target.value})}
                             />
                         </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-400">Status</label>
-                            <select 
-                                className="w-full bg-background border border-white/10 rounded-lg px-4 py-2 text-white focus:border-purple-500 outline-none"
-                                value={formData.status}
-                                onChange={e => setFormData({...formData, status: e.target.value as any})}
-                            >
-                                <option value="Draft">Draft</option>
-                                <option value="Published">Published</option>
-                            </select>
-                        </div>
                     </div>
 
-                    <div className="pt-4 flex justify-end gap-3">
+                    <div className="pt-4 flex justify-between items-center gap-3 border-t border-white/10">
                         <button 
                             type="button"
                             onClick={() => setIsModalOpen(false)}
-                            className="px-6 py-2 rounded-lg text-gray-400 hover:text-white font-medium"
+                            className="px-4 py-2 rounded-lg text-gray-400 hover:text-white font-medium hover:bg-white/5 transition-colors"
                         >
                             Cancel
                         </button>
-                        <button 
-                            type="submit"
-                            className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-2 rounded-lg font-bold transition-colors"
-                        >
-                            {editingEvent ? 'Save Changes' : 'Create Event'}
-                        </button>
+                        <div className="flex gap-3">
+                            <button 
+                                type="button"
+                                onClick={() => onSaveClick('Draft')}
+                                className="flex items-center gap-2 border border-white/10 hover:bg-white/5 text-gray-300 px-4 py-2 rounded-lg font-bold transition-colors"
+                            >
+                                <Save size={16} /> Save as Draft
+                            </button>
+                            <button 
+                                type="button"
+                                onClick={() => onSaveClick('Published')}
+                                className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-6 py-2 rounded-lg font-bold transition-colors shadow-lg shadow-purple-900/20"
+                            >
+                                <Send size={16} /> {formData.status === 'Published' ? 'Update & Publish' : 'Publish Event'}
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>
