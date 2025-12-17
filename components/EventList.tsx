@@ -211,7 +211,7 @@ const EventList: React.FC<EventListProps> = ({
                                                         <div className="flex items-center gap-3 text-txt-dim group-hover:text-txt-main transition-colors">
                                                             <MapPin size={16} className="text-primary/70 shrink-0" />
                                                             <div className="flex flex-col leading-none">
-                                                                <span className="font-medium text-white">{event.locationName}</span>
+                                                                <span className="font-medium text-white">{event.venueName}</span>
                                                                 {event.locationAddress && <span className="text-[10px] text-txt-dim mt-1">{event.locationAddress}</span>}
                                                             </div>
                                                         </div>

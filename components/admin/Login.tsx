@@ -16,8 +16,22 @@ const Login: React.FC = () => {
     setLoading(true);
     setError('');
 
+    // Demo Credentials Configuration
+    const DEMO_ADMIN_EMAIL = "admin@conferencenights.com";
+    const DEMO_ADMIN_PASS = "admin123";
+
     try {
-        // Attempt Supabase Login first
+        // 1. Check Demo Credentials FIRST to avoid unnecessary API 400 errors
+        if (email.toLowerCase() === DEMO_ADMIN_EMAIL && password === DEMO_ADMIN_PASS) {
+            // Artificial delay for realism
+            await new Promise(resolve => setTimeout(resolve, 600));
+            localStorage.setItem('cn_admin_session', 'true');
+            localStorage.setItem('cn_user_role', 'admin'); 
+            navigate('/admin');
+            return;
+        }
+
+        // 2. Only attempt Supabase if not demo user
         const { data, error: authError } = await supabase.auth.signInWithPassword({
             email,
             password,
@@ -25,29 +39,16 @@ const Login: React.FC = () => {
 
         if (!authError && data.user) {
             localStorage.setItem('cn_admin_session', 'true');
-            localStorage.setItem('cn_user_role', 'admin'); // Simplified role handling
+            localStorage.setItem('cn_user_role', 'admin'); 
             navigate('/admin');
             return;
         }
 
-        // Fallback to Demo Credentials (for template/demo purposes)
-        // In a real production app, you would remove this block.
-        const DEMO_ADMIN_EMAIL = "admin@conferencenights.com";
-        const DEMO_ADMIN_PASS = "admin123";
-
-        // Artificial delay for realism if using demo
-        await new Promise(resolve => setTimeout(resolve, 800));
-
-        if (email.toLowerCase() === DEMO_ADMIN_EMAIL && password === DEMO_ADMIN_PASS) {
-            localStorage.setItem('cn_admin_session', 'true');
-            navigate('/admin');
-        } else {
-             // If authError exists, show that, otherwise show invalid creds
-             const errorMsg = authError && authError.message !== 'Invalid login credentials' 
-                ? authError.message 
-                : 'Invalid credentials. Please check your email and password.';
-             setError(errorMsg);
-        }
+        // 3. Handle Errors
+        const errorMsg = authError && authError.message !== 'Invalid login credentials' 
+        ? authError.message 
+        : 'Invalid credentials. Please check your email and password.';
+        setError(errorMsg);
 
     } catch (err: any) {
         setError("An unexpected error occurred.");

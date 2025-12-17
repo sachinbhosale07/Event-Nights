@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   fetchAllEvents, 
@@ -7,7 +8,7 @@ import {
   fetchConferences 
 } from '../../services/db';
 import { EventItem, Conference } from '../../types';
-import { Plus, Edit2, Trash2, Search, X, Filter, Loader2, Save, Send } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, X, Filter, Loader2, Save, Send, AlertTriangle } from 'lucide-react';
 
 const EventsManager: React.FC = () => {
   const [events, setEvents] = useState<EventItem[]>([]);
@@ -18,6 +19,9 @@ const EventsManager: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<EventItem | null>(null);
   const [formData, setFormData] = useState<Partial<EventItem>>({});
+
+  // Delete Confirmation State
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -89,9 +93,10 @@ const EventsManager: React.FC = () => {
       handleSave(status);
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this event?')) {
-        await deleteEvent(id);
+  const confirmDelete = async () => {
+    if (deleteId) {
+        await deleteEvent(deleteId);
+        setDeleteId(null);
         loadData();
     }
   };
@@ -178,7 +183,7 @@ const EventsManager: React.FC = () => {
                                 <button onClick={() => handleOpenModal(event)} className="p-2 text-blue-400 hover:bg-blue-400/10 rounded-lg" title="Edit">
                                     <Edit2 size={16} />
                                 </button>
-                                <button onClick={() => handleDelete(event.id)} className="p-2 text-red-400 hover:bg-red-400/10 rounded-lg" title="Delete">
+                                <button onClick={() => setDeleteId(event.id)} className="p-2 text-red-400 hover:bg-red-400/10 rounded-lg" title="Delete">
                                     <Trash2 size={16} />
                                 </button>
                             </div>
@@ -191,6 +196,35 @@ const EventsManager: React.FC = () => {
             </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteId && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <div className="bg-surface border border-white/10 rounded-2xl w-full max-w-sm p-6 shadow-2xl">
+                <div className="flex flex-col items-center text-center mb-6">
+                    <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center text-red-400 mb-4">
+                        <AlertTriangle size={24} />
+                    </div>
+                    <h3 className="text-lg font-bold text-white mb-2">Delete Event?</h3>
+                    <p className="text-sm text-txt-muted">This action cannot be undone. The event will be permanently removed.</p>
+                </div>
+                <div className="flex gap-3">
+                    <button 
+                        onClick={() => setDeleteId(null)}
+                        className="flex-1 px-4 py-2 rounded-lg text-txt-dim hover:text-white font-medium hover:bg-white/5 transition-colors border border-transparent"
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        onClick={confirmDelete}
+                        className="flex-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 px-4 py-2 rounded-lg font-bold transition-colors"
+                    >
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+      )}
 
       {isModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
@@ -294,6 +328,16 @@ const EventsManager: React.FC = () => {
                                 onChange={e => setFormData({...formData, capacity: parseInt(e.target.value) || 0})}
                             />
                         </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-txt-muted">Address (Optional)</label>
+                        <input 
+                            type="text" 
+                            className="w-full bg-background border border-white/10 rounded-lg px-4 py-2 text-white focus:border-primary/50 outline-none"
+                            value={formData.locationAddress || ''}
+                            onChange={e => setFormData({...formData, locationAddress: e.target.value})}
+                        />
                     </div>
 
                     <div className="space-y-2">

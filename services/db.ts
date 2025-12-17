@@ -1,3 +1,4 @@
+
 import { supabase } from '../supabaseClient';
 import { CONFERENCES, EVENTS } from '../constants';
 import { Conference, EventItem } from '../types';
@@ -203,13 +204,14 @@ export const updateEvent = async (id: string, event: Partial<EventItem>) => {
         .update(event)
         .eq('id', id);
 
-      if (!error) return;
+      if (error) console.warn("DB update failed:", error);
+      // Fall through to update local as well, in case we are looking at local data
     } catch (e) {
-      console.warn("DB update failed, using local");
+      console.warn("DB update exception, trying local");
     }
   }
 
-  // Local Fallback
+  // Local Update
   const events = getLocal<EventItem>(LS_KEYS.EVENTS);
   const index = events.findIndex(e => e.id === id);
   if (index !== -1) {
@@ -226,13 +228,14 @@ export const deleteEvent = async (id: string) => {
         .delete()
         .eq('id', id);
         
-      if (!error) return;
+      if (error) console.warn("DB delete failed:", error);
+      // Fall through to delete local as well
     } catch (e) {
-      console.warn("DB delete failed, using local");
+      console.warn("DB delete exception, trying local");
     }
   }
 
-  // Local Fallback
+  // Local Delete (Always attempt to remove from local storage to prevent zombie items)
   const events = getLocal<EventItem>(LS_KEYS.EVENTS);
   const filtered = events.filter(e => e.id !== id);
   setLocal(LS_KEYS.EVENTS, filtered);
@@ -271,13 +274,14 @@ export const updateConference = async (id: string, conference: Partial<Conferenc
         .update(conference)
         .eq('id', id);
 
-      if (!error) return;
+      if (error) console.warn("DB update failed:", error);
+      // Fall through to update local
     } catch (e) {
-       console.warn("DB update failed, using local");
+       console.warn("DB update exception, trying local");
     }
   }
 
-  // Local Fallback
+  // Local Update
   const confs = getLocal<Conference>(LS_KEYS.CONFERENCES);
   const index = confs.findIndex(c => c.id === id);
   if (index !== -1) {
@@ -300,18 +304,19 @@ export const deleteConference = async (id: string, deleteEvents: boolean = false
         .delete()
         .eq('id', id);
 
-      if (!error) return;
+      if (error) console.warn("DB delete failed:", error);
+      // Fall through to delete local
     } catch (e) {
-       console.warn("DB delete failed, using local");
+       console.warn("DB delete exception, trying local");
     }
   }
 
-  // Local Fallback
+  // Local Delete
   let confs = getLocal<Conference>(LS_KEYS.CONFERENCES);
   confs = confs.filter(c => c.id !== id);
   setLocal(LS_KEYS.CONFERENCES, confs);
   
-  // Handle events linked to this conference
+  // Handle events linked to this conference locally
   let events = getLocal<EventItem>(LS_KEYS.EVENTS);
   if (deleteEvents) {
       events = events.filter(e => e.conferenceId !== id);

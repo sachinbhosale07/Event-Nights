@@ -7,7 +7,7 @@ import {
   deleteConference 
 } from '../../services/db';
 import { Conference } from '../../types';
-import { Plus, Edit2, Trash2, Search, X, Loader2, Eye, Save, Send } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, X, Loader2, Eye, Save, Send, AlertTriangle } from 'lucide-react';
 import { MONTHS } from '../../constants';
 
 const ConferencesManager: React.FC = () => {
@@ -18,6 +18,9 @@ const ConferencesManager: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<Conference>>({});
+
+  // Delete Confirmation State
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -98,9 +101,10 @@ const ConferencesManager: React.FC = () => {
       handleSave(status);
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Delete this conference? Events will be unlinked (not deleted).')) {
-        await deleteConference(id, false);
+  const confirmDelete = async () => {
+    if (deleteId) {
+        await deleteConference(deleteId, false);
+        setDeleteId(null);
         loadData();
     }
   };
@@ -174,7 +178,7 @@ const ConferencesManager: React.FC = () => {
                             <button onClick={() => handleOpenModal(conf)} className="p-2 text-blue-400 hover:bg-blue-400/10 rounded-lg" title="Edit">
                                 <Edit2 size={16} />
                             </button>
-                            <button onClick={() => handleDelete(conf.id)} className="p-2 text-red-400 hover:bg-red-400/10 rounded-lg" title="Delete">
+                            <button onClick={() => setDeleteId(conf.id)} className="p-2 text-red-400 hover:bg-red-400/10 rounded-lg" title="Delete">
                                 <Trash2 size={16} />
                             </button>
                         </div>
@@ -186,6 +190,35 @@ const ConferencesManager: React.FC = () => {
             </div>
         )}
       </div>
+
+       {/* Delete Confirmation Modal */}
+       {deleteId && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <div className="bg-surface border border-white/10 rounded-2xl w-full max-w-sm p-6 shadow-2xl">
+                <div className="flex flex-col items-center text-center mb-6">
+                    <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center text-red-400 mb-4">
+                        <AlertTriangle size={24} />
+                    </div>
+                    <h3 className="text-lg font-bold text-white mb-2">Delete Conference?</h3>
+                    <p className="text-sm text-txt-muted">This will remove the conference, but unlink the events. They will become independent.</p>
+                </div>
+                <div className="flex gap-3">
+                    <button 
+                        onClick={() => setDeleteId(null)}
+                        className="flex-1 px-4 py-2 rounded-lg text-txt-dim hover:text-white font-medium hover:bg-white/5 transition-colors border border-transparent"
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        onClick={confirmDelete}
+                        className="flex-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 px-4 py-2 rounded-lg font-bold transition-colors"
+                    >
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+      )}
 
       {isModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">

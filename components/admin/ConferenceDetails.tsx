@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
@@ -10,7 +11,7 @@ import {
   fetchConferences
 } from '../../services/db';
 import { Conference, EventItem } from '../../types';
-import { ArrowLeft, Calendar, MapPin, Globe, Plus, Edit2, Trash2, Loader2, ExternalLink, X, Save, Send, Image } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, Globe, Plus, Edit2, Trash2, Loader2, ExternalLink, X, Save, Send, Image, AlertTriangle } from 'lucide-react';
 
 const ConferenceDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -29,6 +30,9 @@ const ConferenceDetails: React.FC = () => {
   // Modal State - Conference
   const [isConfModalOpen, setIsConfModalOpen] = useState(false);
   const [confFormData, setConfFormData] = useState<Partial<Conference>>({});
+
+  // Delete Confirmation State
+  const [deleteEventId, setDeleteEventId] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -99,9 +103,10 @@ const ConferenceDetails: React.FC = () => {
     }
   };
 
-  const onDeleteEvent = async (eventId: string) => {
-      if(confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
-          await deleteEvent(eventId);
+  const confirmDeleteEvent = async () => {
+      if(deleteEventId) {
+          await deleteEvent(deleteEventId);
+          setDeleteEventId(null);
           if (id) loadData(id);
       }
   };
@@ -224,7 +229,7 @@ const ConferenceDetails: React.FC = () => {
                                 <button onClick={() => handleOpenEventModal(event)} className="p-2 text-blue-400 hover:bg-blue-400/10 rounded-lg" title="Edit">
                                     <Edit2 size={16} />
                                 </button>
-                                <button onClick={() => onDeleteEvent(event.id)} className="p-2 text-red-400 hover:bg-red-400/10 rounded-lg" title="Delete">
+                                <button onClick={() => setDeleteEventId(event.id)} className="p-2 text-red-400 hover:bg-red-400/10 rounded-lg" title="Delete">
                                     <Trash2 size={16} />
                                 </button>
                             </div>
@@ -261,6 +266,35 @@ const ConferenceDetails: React.FC = () => {
                )}
           </div>
       </div>
+
+       {/* Delete Confirmation Modal */}
+       {deleteEventId && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <div className="bg-surface border border-white/10 rounded-2xl w-full max-w-sm p-6 shadow-2xl">
+                <div className="flex flex-col items-center text-center mb-6">
+                    <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center text-red-400 mb-4">
+                        <AlertTriangle size={24} />
+                    </div>
+                    <h3 className="text-lg font-bold text-white mb-2">Delete Event?</h3>
+                    <p className="text-sm text-txt-muted">This action cannot be undone. The event will be permanently removed.</p>
+                </div>
+                <div className="flex gap-3">
+                    <button 
+                        onClick={() => setDeleteEventId(null)}
+                        className="flex-1 px-4 py-2 rounded-lg text-txt-dim hover:text-white font-medium hover:bg-white/5 transition-colors border border-transparent"
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        onClick={confirmDeleteEvent}
+                        className="flex-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 px-4 py-2 rounded-lg font-bold transition-colors"
+                    >
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+      )}
 
       {/* --- EVENT MODAL --- */}
       {isEventModalOpen && (
@@ -365,6 +399,16 @@ const ConferenceDetails: React.FC = () => {
                                 onChange={e => setEventFormData({...eventFormData, capacity: parseInt(e.target.value) || 0})}
                             />
                         </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-txt-muted">Address (Optional)</label>
+                        <input 
+                            type="text" 
+                            className="w-full bg-background border border-white/10 rounded-lg px-4 py-2 text-white focus:border-primary/50 outline-none"
+                            value={eventFormData.locationAddress || ''}
+                            onChange={e => setEventFormData({...eventFormData, locationAddress: e.target.value})}
+                        />
                     </div>
 
                     <div className="space-y-2">
