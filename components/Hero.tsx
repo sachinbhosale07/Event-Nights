@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { ArrowRight, Sparkles, Plus } from 'lucide-react';
 
@@ -43,7 +44,7 @@ const Hero: React.FC<HeroProps> = ({ onOpenSubmitEventModal }) => {
       <div className="absolute top-40 right-20 w-1.5 h-1.5 bg-primary/30 rounded-full animate-pulse delay-700" />
       
       {/* Main Hero Content */}
-      <div className="relative z-10 px-6 pt-32 pb-24 text-center max-w-4xl mx-auto">
+      <div className="relative z-10 px-6 pt-32 pb-0 text-center max-w-4xl mx-auto">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 mb-8 animate-fade-in hover:bg-primary/20 transition-colors cursor-default">
              <Sparkles size={12} className="text-primary" />
              <span className="text-[11px] font-bold text-primary tracking-wider uppercase">The Insider's Directory</span>

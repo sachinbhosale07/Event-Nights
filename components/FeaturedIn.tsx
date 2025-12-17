@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 const LOGO_GROUPS = {
@@ -30,7 +31,7 @@ const FeaturedIn: React.FC = () => {
       
       {/* Section Header */}
       <div className="container mx-auto px-6 mb-10 text-center">
-        <h3 className="text-sm font-bold text-white mb-2 tracking-wide">Featured In</h3>
+        <h3 className="text-[25px] font-bold text-white mb-4 tracking-wide">Featured In</h3>
         <p className="text-xs text-txt-dim font-medium uppercase tracking-widest">
           Trusted by leading media, conferences, and platforms worldwide
         </p>
