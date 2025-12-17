@@ -67,7 +67,7 @@ const ConferenceSidebar: React.FC<ConferenceSidebarProps> = ({
   }, [isPickerOpen]);
 
   return (
-    <div className="w-full lg:w-[360px] flex-shrink-0 flex flex-col gap-6 lg:sticky lg:top-[88px] h-fit self-start animate-fade-in">
+    <div className="w-full lg:w-[360px] flex-shrink-0 flex flex-col gap-6 lg:sticky lg:top-4 h-fit self-start animate-fade-in">
       
       {/* 1. Structural Timeline Anchor (New Month Nav) */}
       <div 
@@ -164,7 +164,7 @@ const ConferenceSidebar: React.FC<ConferenceSidebarProps> = ({
         </div>
 
         {/* Updated Container: Fixed Height + Scrollbar */}
-        <div className="flex flex-col gap-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+        <div className="flex flex-col gap-3 max-h-[300px] lg:max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
             {conferences.map((conf) => {
             const isSelected = conf.id === selectedConferenceId;
             return (

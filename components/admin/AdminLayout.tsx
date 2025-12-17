@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -11,12 +12,14 @@ import {
   Bell,
   Menu,
   Layers,
-  UserCheck
+  UserCheck,
+  X
 } from 'lucide-react';
 
 const AdminLayout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const session = localStorage.getItem('cn_admin_session');
@@ -24,6 +27,10 @@ const AdminLayout: React.FC = () => {
         navigate('/admin/login');
     }
   }, [navigate]);
+
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
 
   const handleLogout = () => {
     localStorage.removeItem('cn_admin_session');
@@ -42,16 +49,37 @@ const AdminLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background flex">
+      {/* Mobile Sidebar Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/80 z-40 md:hidden backdrop-blur-sm"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-64 bg-surface border-r border-white/5 flex-col fixed inset-y-0 z-50 hidden md:flex">
-        <div className="h-16 flex items-center px-6 border-b border-white/5">
-          <div className="w-8 h-8 rounded-lg bg-surfaceHighlight border border-white/5 flex items-center justify-center mr-3 shadow-sm">
-            <span className="font-bold text-primary text-xs">EN</span>
+      <aside className={`
+        fixed inset-y-0 left-0 z-50 w-64 bg-surface border-r border-white/5 flex flex-col 
+        transition-transform duration-300 ease-in-out
+        md:translate-x-0
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+        <div className="h-16 flex items-center justify-between px-6 border-b border-white/5 shrink-0">
+          <div className="flex items-center">
+            <div className="w-8 h-8 rounded-lg bg-surfaceHighlight border border-white/5 flex items-center justify-center mr-3 shadow-sm">
+              <span className="font-bold text-primary text-xs">EN</span>
+            </div>
+            <span className="text-lg font-bold text-white">Admin Panel</span>
           </div>
-          <span className="text-lg font-bold text-white">Admin Panel</span>
+          <button 
+             onClick={() => setIsMobileMenuOpen(false)}
+             className="md:hidden text-txt-dim hover:text-white"
+          >
+             <X size={20} />
+          </button>
         </div>
 
-        <nav className="flex-1 py-6 px-3 space-y-1 overflow-y-auto">
+        <nav className="flex-1 py-6 px-3 space-y-1 overflow-y-auto custom-scrollbar">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
@@ -71,7 +99,7 @@ const AdminLayout: React.FC = () => {
           })}
         </nav>
 
-        <div className="p-4 border-t border-white/5">
+        <div className="p-4 border-t border-white/5 shrink-0">
           <button 
             onClick={handleLogout}
             className="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-medium text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
@@ -83,11 +111,14 @@ const AdminLayout: React.FC = () => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 md:ml-64 flex flex-col min-h-screen">
+      <main className="flex-1 md:ml-64 flex flex-col min-h-screen w-full md:w-auto">
         {/* Navbar */}
-        <header className="h-16 bg-background/80 backdrop-blur-xl border-b border-white/5 sticky top-0 z-40 px-4 md:px-8 flex items-center justify-between">
+        <header className="h-16 bg-background/80 backdrop-blur-xl border-b border-white/5 sticky top-0 z-30 px-4 md:px-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
-             <button className="md:hidden p-2 text-txt-muted hover:bg-white/5 rounded-lg">
+             <button 
+               onClick={() => setIsMobileMenuOpen(true)}
+               className="md:hidden p-2 text-txt-muted hover:bg-white/5 rounded-lg"
+             >
                 <Menu size={20} />
              </button>
              <div className="relative hidden sm:block">

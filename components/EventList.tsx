@@ -123,7 +123,7 @@ const EventList: React.FC<EventListProps> = ({
                         <div key={date} className="relative">
                             
                             {/* Sticky Date Header */}
-                            <div className="sticky top-[88px] z-30 mb-8 flex items-center gap-4 bg-background/95 backdrop-blur-sm py-2 -mx-2 px-2 rounded-xl border border-transparent">
+                            <div className="sticky top-0 z-30 mb-8 flex items-center gap-4 bg-background/95 backdrop-blur-sm py-2 -mx-2 px-2 rounded-xl border border-transparent">
                                 <div className="h-12 w-12 rounded-xl bg-surfaceHighlight border border-white/10 flex flex-col items-center justify-center shadow-glass shrink-0">
                                     <span className="text-[10px] uppercase text-primary font-bold leading-none mb-0.5">{dateObj.toLocaleString('en-US', { month: 'short' })}</span>
                                     <span className="text-lg font-bold text-white leading-none">{dateObj.getDate()}</span>
