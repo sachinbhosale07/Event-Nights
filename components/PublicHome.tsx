@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Hero from './Hero';
 import FeaturedIn from './FeaturedIn';
@@ -117,6 +118,18 @@ const PublicHome: React.FC = () => {
 
     loadData();
   }, []);
+
+  // Handle Action Params (e.g. from Footer)
+  useEffect(() => {
+    if (searchParams.get('action') === 'submit') {
+      setIsSubmitEventModalOpen(true);
+      setSearchParams(prev => {
+        const newParams = new URLSearchParams(prev);
+        newParams.delete('action');
+        return newParams;
+      }, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const handleSeed = async () => {
     setIsSeeding(true);

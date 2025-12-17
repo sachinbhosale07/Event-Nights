@@ -249,14 +249,16 @@ const EventList: React.FC<EventListProps> = ({
                                                             {isSaved ? 'Saved' : 'Save'}
                                                         </button>
 
-                                                        <a 
-                                                            href={calendarUrl}
-                                                            target="_blank"
-                                                            rel="noreferrer"
-                                                            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-white/5 border border-white/5 text-txt-muted hover:text-white hover:bg-white/10 transition-colors"
-                                                        >
-                                                            <CalendarPlus size={14} /> Add to Cal
-                                                        </a>
+                                                        {calendarUrl && (
+                                                            <a 
+                                                                href={calendarUrl}
+                                                                target="_blank"
+                                                                rel="noreferrer"
+                                                                className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-white/5 border border-white/5 text-txt-muted hover:text-white hover:bg-white/10 transition-colors"
+                                                            >
+                                                                <CalendarPlus size={14} /> Add to Cal
+                                                            </a>
+                                                        )}
                                                     </div>
 
                                                     <a 

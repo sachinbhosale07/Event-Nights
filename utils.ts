@@ -3,7 +3,7 @@ import { EventItem } from './types';
 
 export const generateGoogleCalendarUrl = (event: EventItem): string => {
   try {
-    if (!event.date || !event.startTime) return '#';
+    if (!event.date || !event.startTime) return '';
 
     // Helper: Construct a date object from date string (YYYY-MM-DD) and time string (HH:MM AM/PM or HH:MM)
     const createDateTime = (dateStr: string, timeStr: string): Date => {
@@ -84,6 +84,6 @@ export const generateGoogleCalendarUrl = (event: EventItem): string => {
     return `https://www.google.com/calendar/render?${params.toString()}`;
   } catch (e) {
     console.warn("Error generating calendar URL:", e);
-    return '#';
+    return '';
   }
 };

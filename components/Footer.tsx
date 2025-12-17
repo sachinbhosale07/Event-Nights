@@ -21,10 +21,10 @@ const Footer: React.FC = () => {
                     The ultimate directory for conference side-events, VIP dinners, and networking parties. helping you maximize your ROI at every event.
                 </p>
                 <div className="flex gap-4">
-                    <a href="#" className="w-10 h-10 rounded-full bg-surface border border-white/10 flex items-center justify-center text-txt-dim hover:text-white hover:border-primary/50 hover:bg-primary/10 transition-all">
+                    <a href="https://twitter.com" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-surface border border-white/10 flex items-center justify-center text-txt-dim hover:text-white hover:border-primary/50 hover:bg-primary/10 transition-all">
                         <Twitter size={18} />
                     </a>
-                    <a href="#" className="w-10 h-10 rounded-full bg-surface border border-white/10 flex items-center justify-center text-txt-dim hover:text-white hover:border-primary/50 hover:bg-primary/10 transition-all">
+                    <a href="https://linkedin.com" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-surface border border-white/10 flex items-center justify-center text-txt-dim hover:text-white hover:border-primary/50 hover:bg-primary/10 transition-all">
                         <Linkedin size={18} />
                     </a>
                     <a href="mailto:hello@conferencenights.com" className="w-10 h-10 rounded-full bg-surface border border-white/10 flex items-center justify-center text-txt-dim hover:text-white hover:border-primary/50 hover:bg-primary/10 transition-all">
@@ -38,7 +38,7 @@ const Footer: React.FC = () => {
                 <h4 className="text-white font-bold mb-6">Platform</h4>
                 <ul className="space-y-4 text-sm text-txt-muted">
                     <li><Link to="/" className="hover:text-primary transition-colors">Browse Events</Link></li>
-                    <li><Link to="/" className="hover:text-primary transition-colors">Submit an Event</Link></li>
+                    <li><Link to="/?action=submit" className="hover:text-primary transition-colors">Submit an Event</Link></li>
                     <li><Link to="/about" className="hover:text-primary transition-colors">About Us</Link></li>
                 </ul>
             </div>
@@ -49,7 +49,6 @@ const Footer: React.FC = () => {
                 <ul className="space-y-4 text-sm text-txt-muted">
                     <li><Link to="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
                     <li><Link to="/terms" className="hover:text-primary transition-colors">Terms of Service</Link></li>
-                    <li><span className="cursor-pointer hover:text-primary transition-colors">Cookie Settings</span></li>
                 </ul>
             </div>
         </div>

@@ -1,3 +1,4 @@
+
 export type Status = 'Draft' | 'Published';
 
 export interface Conference {
@@ -69,5 +70,5 @@ export interface User {
   email: string;
   role: 'Admin' | 'Editor' | 'Viewer';
   lastActive: string;
-  status: 'Active' | 'Inactive';
+  status: 'Active' | 'Inactive' | 'Invited';
 }
