@@ -3,11 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#09090b" />
+    <meta name="description" content="A dark-themed directory for conference side-events, featuring a starry hero section, conference filtering, and detailed event schedules." />
     <title>Conference Nights</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script>
       tailwind.config = {
         darkMode: 'class',
@@ -15,28 +17,54 @@
           extend: {
             fontFamily: {
               sans: ['Inter', 'sans-serif'],
+              mono: ['JetBrains Mono', 'monospace'],
             },
             colors: {
-              background: '#050508',
-              surface: '#0f0f16',
-              surfaceHighlight: '#1a1a24',
-              primary: '#8b5cf6', // Violet 500
-              secondary: '#ec4899', // Pink 500
-              accent: '#6366f1', // Indigo 500
+              background: '#09090b', // Zinc 950
+              surface: '#121215',    // Custom Dark Gray
+              surfaceHighlight: '#1e1e22',
+              
+              primary: '#2dd4bf', // Teal 400
+              primaryHover: '#14b8a6', // Teal 500
+              
+              accent: '#38bdf8', // Sky 400
+              accentHover: '#0ea5e9',
+
+              txt: {
+                main: '#fafafa', // Neutral 50
+                muted: '#a1a1aa', // Neutral 400
+                dim: '#52525b', // Neutral 600
+              }
+            },
+            backgroundImage: {
+              'subtle-glow': 'radial-gradient(circle at 50% -20%, rgba(45, 212, 191, 0.1) 0%, rgba(9, 9, 11, 0) 50%)',
+            },
+            boxShadow: {
+              'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+              'glow': '0 0 20px rgba(45, 212, 191, 0.15)',
             },
             animation: {
+              marquee: 'marquee 120s linear infinite',
+              'marquee-reverse': 'marquee-reverse 120s linear infinite',
+              'fade-in-up': 'fadeInUp 0.5s ease-out forwards',
               'fade-in': 'fadeIn 0.5s ease-out forwards',
-              'fade-in-up': 'fadeInUp 0.8s ease-out forwards',
-              'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
             },
             keyframes: {
+              marquee: {
+                '0%': { transform: 'translateX(0%)' },
+                '100%': { transform: 'translateX(-50%)' },
+              },
+              'marquee-reverse': {
+                '0%': { transform: 'translateX(-50%)' },
+                '100%': { transform: 'translateX(0%)' },
+              },
+              fadeInUp: {
+                '0%': { opacity: '0', transform: 'translateY(10px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              },
               fadeIn: {
                 '0%': { opacity: '0' },
                 '100%': { opacity: '1' },
-              },
-              fadeInUp: {
-                '0%': { opacity: '0', transform: 'translateY(20px)' },
-                '100%': { opacity: '1', transform: 'translateY(0)' },
               }
             }
           }
@@ -48,25 +76,39 @@
         height: 100%;
         margin: 0;
         padding: 0;
+        scroll-behavior: smooth;
       }
       body {
-        background-color: #050508;
-        color: #e2e8f0;
+        background-color: #09090b;
+        color: #fafafa;
+        -webkit-font-smoothing: antialiased;
       }
-      /* Custom Scrollbar */
+      /* Clean Scrollbar */
       ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
+        width: 6px;
+        height: 6px;
       }
       ::-webkit-scrollbar-track {
-        background: #0f0f16; 
+        background: transparent; 
       }
       ::-webkit-scrollbar-thumb {
-        background: #334155; 
-        border-radius: 4px;
+        background: #27272a; 
+        border-radius: 3px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: #475569; 
+        background: #3f3f46; 
+      }
+      
+      /* Utilities */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      .hover\:pause:hover {
+        animation-play-state: paused;
       }
     </style>
   <script type="importmap">

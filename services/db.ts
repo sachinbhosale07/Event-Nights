@@ -2,18 +2,49 @@ import { supabase } from '../supabaseClient';
 import { CONFERENCES, EVENTS } from '../constants';
 import { Conference, EventItem } from '../types';
 
+// Storage Keys
+const LS_KEYS = {
+  CONFERENCES: 'cn_conferences_data',
+  EVENTS: 'cn_events_data'
+};
+
+// Helper to initialize LocalStorage with demo data if empty
+const initLocalStorage = () => {
+  if (typeof window === 'undefined') return;
+  
+  if (!localStorage.getItem(LS_KEYS.CONFERENCES)) {
+    localStorage.setItem(LS_KEYS.CONFERENCES, JSON.stringify(CONFERENCES));
+  }
+  if (!localStorage.getItem(LS_KEYS.EVENTS)) {
+    localStorage.setItem(LS_KEYS.EVENTS, JSON.stringify(EVENTS));
+  }
+};
+
+// Initialize immediately
+initLocalStorage();
+
+const getLocal = <T>(key: string): T[] => {
+  try {
+    return JSON.parse(localStorage.getItem(key) || '[]');
+  } catch {
+    return [];
+  }
+};
+
+const setLocal = (key: string, data: any[]) => {
+  localStorage.setItem(key, JSON.stringify(data));
+};
+
 // Check if configured
 export const isDatabaseConfigured = () => {
-  // Access protected properties to check configuration by casting to any
   const client = supabase as any;
   const url = client.supabaseUrl;
   const key = client.supabaseKey;
-  
   return (
     url && 
-    url !== 'https://your-project.supabase.co' && 
+    url.includes('supabase.co') &&
     key && 
-    key !== 'your-anon-key'
+    key.length > 20
   );
 };
 
@@ -27,402 +58,272 @@ const isTableMissingError = (error: any) => {
 
 // --- STATUS CHECK ---
 export const getConnectionStatus = async () => {
-  if (!isDatabaseConfigured()) return { status: 'demo', message: 'Supabase not configured' };
+  if (!isDatabaseConfigured()) return { status: 'demo', message: 'Local Mode' };
   
   try {
-    // Try to select 1 record to check connection and table existence
     const { error } = await supabase.from('conferences').select('id').limit(1);
     
     if (error) {
       if (isTableMissingError(error)) {
-          return { status: 'missing_tables', message: 'Tables not found in DB' };
+          return { status: 'missing_tables', message: 'Tables Missing' };
       }
-      return { status: 'error', message: error.message };
+      // If authenticaton fails, we also fall back to demo/local
+      return { status: 'error', message: 'DB Error (Using Local)' };
     }
     
     return { status: 'connected', message: 'Database Connected' };
   } catch (e) {
-    console.warn("Connection check failed:", e);
-    return { status: 'demo', message: 'Demo Mode (Offline)' };
+    return { status: 'demo', message: 'Offline Mode' };
   }
 };
 
 // --- READ ---
 
 export const fetchConferences = async (): Promise<Conference[]> => {
-  if (!isDatabaseConfigured()) {
-    return [...CONFERENCES];
-  }
+  // Try DB first
+  if (isDatabaseConfigured()) {
+    try {
+      const { data, error } = await supabase
+        .from('conferences')
+        .select('*')
+        .order('startDate', { ascending: true });
 
-  try {
-    const { data, error } = await supabase
-      .from('conferences')
-      .select('*')
-      .order('startDate', { ascending: true });
-
-    if (error) {
-      if (isTableMissingError(error)) {
-        console.warn("Table 'conferences' not found. Falling back to demo data.");
-        return [...CONFERENCES];
-      }
-      console.error('Error fetching conferences:', error.message);
-      return [...CONFERENCES];
+      if (!error && data) return data as Conference[];
+    } catch (e) {
+      console.warn("DB fetch failed, using local");
     }
-
-    return data as Conference[];
-  } catch (e) {
-    console.warn("Network error fetching conferences, using demo data.");
-    return [...CONFERENCES];
   }
+  // Fallback to LocalStorage
+  return getLocal<Conference>(LS_KEYS.CONFERENCES);
 };
 
 export const fetchConferenceById = async (id: string): Promise<Conference | undefined> => {
-  if (!isDatabaseConfigured()) {
-     return CONFERENCES.find(c => c.id === id);
-  }
+  if (isDatabaseConfigured()) {
+    try {
+      const { data, error } = await supabase
+        .from('conferences')
+        .select('*')
+        .eq('id', id)
+        .single();
 
-  try {
-    const { data, error } = await supabase
-      .from('conferences')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error) {
-      if (isTableMissingError(error)) {
-          return CONFERENCES.find(c => c.id === id);
-      }
-      console.error('Error fetching conference:', error.message);
-      return CONFERENCES.find(c => c.id === id);
+      if (!error && data) return data as Conference;
+    } catch (e) {
+       console.warn("DB fetch failed, using local");
     }
-
-    return data as Conference;
-  } catch (e) {
-    return CONFERENCES.find(c => c.id === id);
   }
+  return getLocal<Conference>(LS_KEYS.CONFERENCES).find(c => c.id === id);
 };
 
 export const fetchAllEvents = async (): Promise<EventItem[]> => {
-  if (!isDatabaseConfigured()) {
-    return [...EVENTS];
-  }
+  if (isDatabaseConfigured()) {
+    try {
+      const { data, error } = await supabase
+        .from('events')
+        .select('*')
+        .order('date', { ascending: true });
 
-  try {
-    const { data, error } = await supabase
-      .from('events')
-      .select('*')
-      .order('date', { ascending: true });
-
-    if (error) {
-      if (isTableMissingError(error)) {
-        console.warn("Table 'events' not found. Falling back to demo data.");
-        return [...EVENTS];
-      }
-      console.error('Error fetching events:', error.message);
-      return [...EVENTS];
+      if (!error && data) return data as EventItem[];
+    } catch (e) {
+      console.warn("DB fetch failed, using local");
     }
-
-    return data as EventItem[];
-  } catch (e) {
-    console.warn("Network error fetching events, using demo data.");
-    return [...EVENTS];
   }
+  return getLocal<EventItem>(LS_KEYS.EVENTS);
 };
 
 export const fetchEventsByConference = async (conferenceId: string): Promise<EventItem[]> => {
-  if (!isDatabaseConfigured()) {
-    return EVENTS.filter(e => e.conferenceId === conferenceId);
-  }
+  if (isDatabaseConfigured()) {
+    try {
+      const { data, error } = await supabase
+        .from('events')
+        .select('*')
+        .eq('conferenceId', conferenceId)
+        .order('date', { ascending: true })
+        .order('startTime', { ascending: true });
 
-  try {
-    const { data, error } = await supabase
-      .from('events')
-      .select('*')
-      .eq('conferenceId', conferenceId)
-      .order('date', { ascending: true })
-      .order('startTime', { ascending: true });
-
-    if (error) {
-      if (isTableMissingError(error)) {
-          return EVENTS.filter(e => e.conferenceId === conferenceId);
-      }
-      console.error('Error fetching conference events:', error.message);
-      return EVENTS.filter(e => e.conferenceId === conferenceId);
+      if (!error && data) return data as EventItem[];
+    } catch (e) {
+       console.warn("DB fetch failed, using local");
     }
-
-    return data as EventItem[];
-  } catch (e) {
-    return EVENTS.filter(e => e.conferenceId === conferenceId);
   }
+  return getLocal<EventItem>(LS_KEYS.EVENTS).filter(e => e.conferenceId === conferenceId);
 };
 
 export const fetchIndependentEvents = async (): Promise<EventItem[]> => {
-  if (!isDatabaseConfigured()) {
-    return EVENTS.filter(e => !e.conferenceId);
-  }
+   if (isDatabaseConfigured()) {
+    try {
+      const { data, error } = await supabase
+        .from('events')
+        .select('*')
+        .is('conferenceId', null)
+        .order('date', { ascending: true });
 
-  try {
-    const { data, error } = await supabase
-      .from('events')
-      .select('*')
-      .is('conferenceId', null)
-      .order('date', { ascending: true });
-
-    if (error) {
-      if (isTableMissingError(error)) {
-          return EVENTS.filter(e => !e.conferenceId);
-      }
-      console.error('Error fetching independent events:', error.message);
-      return EVENTS.filter(e => !e.conferenceId);
+      if (!error && data) return data as EventItem[];
+    } catch (e) {
+       console.warn("DB fetch failed, using local");
     }
-
-    return data as EventItem[];
-  } catch (e) {
-    return EVENTS.filter(e => !e.conferenceId);
   }
+  return getLocal<EventItem>(LS_KEYS.EVENTS).filter(e => !e.conferenceId);
 };
 
 // --- CRUD Operations ---
 
 // Events
 export const createEvent = async (event: Omit<EventItem, 'id'>) => {
-  const fallback = { id: 'temp_' + Date.now(), ...event } as EventItem;
+  const newEvent = { id: 'evt_' + Date.now(), ...event } as EventItem;
   
-  if (!isDatabaseConfigured()) {
-     alert("Database not configured. Using mock storage.");
-     return fallback;
-  }
+  if (isDatabaseConfigured()) {
+    try {
+      const { data, error } = await supabase
+        .from('events')
+        .insert([{
+          ...event,
+          conferenceId: event.conferenceId || null
+        }])
+        .select()
+        .single();
 
-  try {
-    // Sanitize payload to remove metadata fields not in DB (like submitter info)
-    // and ensure nulls for optional fields
-    const payload = {
-      conferenceId: event.conferenceId || null,
-      title: event.title,
-      description: event.description || '',
-      category: event.category || null,
-      status: event.status || 'Draft',
-      date: event.date,
-      startTime: event.startTime,
-      endTime: event.endTime || null,
-      venueName: event.venueName,
-      locationName: event.locationName || event.venueName,
-      locationAddress: event.locationAddress || null,
-      host: event.host,
-      capacity: event.capacity || null,
-      registrationUrl: event.registrationUrl || null,
-      link: event.link || event.registrationUrl || null,
-      image: event.image || null,
-      tags: event.tags || []
-    };
-
-    const { data, error } = await supabase
-      .from('events')
-      .insert([payload])
-      .select()
-      .single();
-
-    if (error) {
-      if (isTableMissingError(error)) { 
-          console.warn("Table 'events' missing. Mocking creation success.");
-          return fallback;
-      }
-      console.error('Error creating event:', error.message);
-      throw error;
+      if (!error && data) return data;
+    } catch (e) {
+      console.warn("DB create failed, using local");
     }
-
-    return data;
-  } catch (e) {
-    console.warn("Network error creating event, using mock.");
-    alert("Network error. Event created locally.");
-    return fallback;
   }
+
+  // Local Fallback
+  const events = getLocal<EventItem>(LS_KEYS.EVENTS);
+  events.push(newEvent);
+  setLocal(LS_KEYS.EVENTS, events);
+  return newEvent;
 };
 
 export const updateEvent = async (id: string, event: Partial<EventItem>) => {
-  if (!isDatabaseConfigured()) return;
+  if (isDatabaseConfigured()) {
+    try {
+      const { error } = await supabase
+        .from('events')
+        .update(event)
+        .eq('id', id);
 
-  try {
-    const payload = { ...event };
-    if (event.venueName) payload.locationName = event.venueName;
-    if (event.registrationUrl) payload.link = event.registrationUrl;
-
-    const { error } = await supabase
-      .from('events')
-      .update(payload)
-      .eq('id', id);
-
-    if (error) {
-      if (isTableMissingError(error)) return;
-      console.error('Error updating event:', error.message);
-      throw error;
+      if (!error) return;
+    } catch (e) {
+      console.warn("DB update failed, using local");
     }
-  } catch (e) {
-    console.error("Network error updating event");
-    throw e;
+  }
+
+  // Local Fallback
+  const events = getLocal<EventItem>(LS_KEYS.EVENTS);
+  const index = events.findIndex(e => e.id === id);
+  if (index !== -1) {
+    events[index] = { ...events[index], ...event };
+    setLocal(LS_KEYS.EVENTS, events);
   }
 };
 
 export const deleteEvent = async (id: string) => {
-  if (!isDatabaseConfigured()) return;
-
-  try {
-    const { error } = await supabase
-      .from('events')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      if (isTableMissingError(error)) return;
-      console.error('Error deleting event:', error.message);
-      throw error;
+  if (isDatabaseConfigured()) {
+    try {
+      const { error } = await supabase
+        .from('events')
+        .delete()
+        .eq('id', id);
+        
+      if (!error) return;
+    } catch (e) {
+      console.warn("DB delete failed, using local");
     }
-  } catch (e) {
-    console.error("Network error deleting event");
-    throw e;
   }
+
+  // Local Fallback
+  const events = getLocal<EventItem>(LS_KEYS.EVENTS);
+  const filtered = events.filter(e => e.id !== id);
+  setLocal(LS_KEYS.EVENTS, filtered);
 };
 
 // Conferences
 export const createConference = async (conference: Omit<Conference, 'id'>) => {
-  const fallback = { id: 'temp_' + Date.now(), ...conference };
+  const newConf = { id: 'conf_' + Date.now(), ...conference } as Conference;
 
-  if (!isDatabaseConfigured()) {
-    alert("Database not configured.");
-    return fallback;
-  }
+  if (isDatabaseConfigured()) {
+    try {
+      const { data, error } = await supabase
+        .from('conferences')
+        .insert([conference])
+        .select()
+        .single();
 
-  try {
-    const { data, error } = await supabase
-      .from('conferences')
-      .insert([conference])
-      .select()
-      .single();
-
-    if (error) {
-      if (isTableMissingError(error)) {
-          console.warn("Table 'conferences' missing. Mocking creation success.");
-          return fallback;
-      }
-      console.error('Error creating conference:', error.message);
-      throw error;
+      if (!error && data) return data;
+    } catch (e) {
+       console.warn("DB create failed, using local");
     }
-
-    return data;
-  } catch (e) {
-     console.warn("Network error creating conference, using mock.");
-     alert("Network error. Conference created locally.");
-     return fallback;
   }
+
+  // Local Fallback
+  const confs = getLocal<Conference>(LS_KEYS.CONFERENCES);
+  confs.push(newConf);
+  setLocal(LS_KEYS.CONFERENCES, confs);
+  return newConf;
 };
 
 export const updateConference = async (id: string, conference: Partial<Conference>) => {
-  if (!isDatabaseConfigured()) return;
+  if (isDatabaseConfigured()) {
+    try {
+      const { error } = await supabase
+        .from('conferences')
+        .update(conference)
+        .eq('id', id);
 
-  try {
-    const { error } = await supabase
-      .from('conferences')
-      .update(conference)
-      .eq('id', id);
-
-    if (error) {
-      if (isTableMissingError(error)) return;
-      console.error('Error updating conference:', error.message);
-      throw error;
+      if (!error) return;
+    } catch (e) {
+       console.warn("DB update failed, using local");
     }
-  } catch (e) {
-    console.error("Network error updating conference");
-    throw e;
+  }
+
+  // Local Fallback
+  const confs = getLocal<Conference>(LS_KEYS.CONFERENCES);
+  const index = confs.findIndex(c => c.id === id);
+  if (index !== -1) {
+    confs[index] = { ...confs[index], ...conference };
+    setLocal(LS_KEYS.CONFERENCES, confs);
   }
 };
 
 export const deleteConference = async (id: string, deleteEvents: boolean = false) => {
-  if (!isDatabaseConfigured()) return;
+  if (isDatabaseConfigured()) {
+    try {
+      if (deleteEvents) {
+        await supabase.from('events').delete().eq('conferenceId', id);
+      } else {
+        await supabase.from('events').update({ conferenceId: null }).eq('conferenceId', id);
+      }
 
-  try {
-    if (deleteEvents) {
-      await supabase.from('events').delete().eq('conferenceId', id);
-    } else {
-      await supabase.from('events').update({ conferenceId: null }).eq('conferenceId', id);
+      const { error } = await supabase
+        .from('conferences')
+        .delete()
+        .eq('id', id);
+
+      if (!error) return;
+    } catch (e) {
+       console.warn("DB delete failed, using local");
     }
-
-    const { error } = await supabase
-      .from('conferences')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      if (isTableMissingError(error)) return;
-      console.error('Error deleting conference:', error.message);
-      throw error;
-    }
-  } catch (e) {
-    console.error("Network error deleting conference");
-    throw e;
   }
+
+  // Local Fallback
+  let confs = getLocal<Conference>(LS_KEYS.CONFERENCES);
+  confs = confs.filter(c => c.id !== id);
+  setLocal(LS_KEYS.CONFERENCES, confs);
+  
+  // Handle events linked to this conference
+  let events = getLocal<EventItem>(LS_KEYS.EVENTS);
+  if (deleteEvents) {
+      events = events.filter(e => e.conferenceId !== id);
+  } else {
+      events = events.map(e => e.conferenceId === id ? { ...e, conferenceId: undefined } : e);
+  }
+  setLocal(LS_KEYS.EVENTS, events);
 };
 
-// Seed function to populate empty Supabase DB with constants
 export const seedDatabase = async () => {
-  if (!isDatabaseConfigured()) {
-    console.log("Supabase not configured, skipping seed.");
-    return;
-  }
-
-  console.log("Seeding database...");
-  
-  try {
-      await supabase.from('conferences').delete().neq('name', '___'); 
-      await supabase.from('events').delete().neq('title', '___');
-  } catch (e) {
-      console.warn("Could not clear tables, maybe they don't exist or network failed.");
-      return;
-  }
-
-  // Insert Conferences
-  const oldIdToNewIdMap: Record<string, string> = {};
-
-  try {
-    for (const conf of CONFERENCES) {
-      const { id, ...confData } = conf; // Remove string ID
-      const { data, error } = await supabase
-          .from('conferences')
-          .insert([confData])
-          .select()
-          .single();
-      
-      if (error) {
-          console.error("Failed to insert conf", conf.name, error.message);
-      } else if (data) {
-          oldIdToNewIdMap[id] = data.id;
-      }
-    }
-
-    // Insert Events
-    const eventsToInsert = EVENTS.map(evt => {
-      const { id, conferenceId, ...evtData } = evt;
-      const newConfId = conferenceId ? oldIdToNewIdMap[conferenceId] : null;
-      return {
-          ...evtData,
-          conferenceId: newConfId,
-          locationName: evt.venueName,
-          link: evt.registrationUrl
-      };
-    });
-
-    const { error: eventError } = await supabase
-      .from('events')
-      .insert(eventsToInsert);
-
-    if (eventError) {
-      console.error("Error seeding events:", eventError.message);
-      return;
-    }
-
-    console.log("Database seeded successfully with demo data.");
+    // Reset to constants
+    localStorage.setItem(LS_KEYS.CONFERENCES, JSON.stringify(CONFERENCES));
+    localStorage.setItem(LS_KEYS.EVENTS, JSON.stringify(EVENTS));
     window.location.reload();
-  } catch (e) {
-    console.error("Seed failed due to network error", e);
-    alert("Failed to seed database: Network Error");
-  }
 };

@@ -1,3 +1,4 @@
+
 import { Conference, EventItem, MonthOption } from './types';
 
 export const MONTHS: MonthOption[] = [
@@ -26,7 +27,7 @@ export const CONFERENCES: Conference[] = [
     startDate: '2025-12-04',
     endDate: '2025-12-05',
     dateRange: 'Dec 4 - Dec 5',
-    description: 'The world\'s premier gathering of influential affiliate marketers and ecommerce entrepreneurs.',
+    description: "The world's premier gathering of influential affiliate marketers and ecommerce entrepreneurs.",
     month: 'Dec',
     year: 2025,
     status: 'Published',
@@ -41,7 +42,7 @@ export const CONFERENCES: Conference[] = [
     startDate: '2025-12-01',
     endDate: '2025-12-03',
     dateRange: 'Dec 1 - Dec 3',
-    description: 'Connecting the DACH iGaming community with the African market.',
+    description: "Connecting the DACH iGaming community with the African market.",
     month: 'Dec',
     year: 2025,
     status: 'Published'
@@ -55,7 +56,7 @@ export const CONFERENCES: Conference[] = [
     startDate: '2025-12-10',
     endDate: '2025-12-14',
     dateRange: 'Dec 10 - Dec 14',
-    description: 'The mother of all iGaming conferences closing out the year.',
+    description: "The mother of all iGaming conferences closing out the year.",
     month: 'Dec',
     year: 2025,
     status: 'Published'
@@ -71,7 +72,7 @@ export const CONFERENCES: Conference[] = [
     startDate: '2026-01-15',
     endDate: '2026-01-17',
     dateRange: 'Jan 15 - Jan 17',
-    description: 'The industry\'s largest performance marketing event, taking over Caesars Forum.',
+    description: "The industry's largest performance marketing event, taking over Caesars Forum.",
     month: 'Jan',
     year: 2026,
     status: 'Published'
@@ -85,7 +86,7 @@ export const CONFERENCES: Conference[] = [
     startDate: '2026-01-18',
     endDate: '2026-01-20',
     dateRange: 'Jan 18 - Jan 20',
-    description: 'The leading tech conference for the entertainment and dating industry.',
+    description: "The leading tech conference for the entertainment and dating industry.",
     month: 'Jan',
     year: 2026,
     status: 'Published'
@@ -101,7 +102,7 @@ export const CONFERENCES: Conference[] = [
     startDate: '2026-02-04',
     endDate: '2026-02-07',
     dateRange: 'Feb 4 - Feb 7',
-    description: 'The most international gathering of iGaming Affiliates.',
+    description: "The most international gathering of iGaming Affiliates.",
     month: 'Feb',
     year: 2026,
     status: 'Published'
@@ -115,7 +116,7 @@ export const CONFERENCES: Conference[] = [
     startDate: '2026-02-23',
     endDate: '2026-02-26',
     dateRange: 'Feb 23 - Feb 26',
-    description: 'Bringing together the brightest minds in the affiliate marketing industry.',
+    description: "Bringing together the brightest minds in the affiliate marketing industry.",
     month: 'Feb',
     year: 2026,
     status: 'Published'
@@ -131,7 +132,7 @@ export const CONFERENCES: Conference[] = [
     startDate: '2026-03-08',
     endDate: '2026-03-10',
     dateRange: 'Mar 8 - Mar 10',
-    description: 'The world\'s largest conference for lead generation and performance marketing.',
+    description: "The world's largest conference for lead generation and performance marketing.",
     month: 'Mar',
     year: 2026,
     status: 'Published'
@@ -145,7 +146,7 @@ export const CONFERENCES: Conference[] = [
     startDate: '2026-03-17',
     endDate: '2026-03-20',
     dateRange: 'Mar 17 - Mar 20',
-    description: 'Where retail changemakers come together to create the future of retail.',
+    description: "Where retail changemakers come together to create the future of retail.",
     month: 'Mar',
     year: 2026,
     status: 'Published'
@@ -160,7 +161,7 @@ export const EVENTS: EventItem[] = [
     date: '2025-12-03',
     startTime: '8:50 AM',
     title: 'AFF+FIT 5km Run',
-    description: 'RUN. CONNECT. RECHARGE Bangkok. Move with purpose. Connect with people who play at your level.',
+    description: "RUN. CONNECT. RECHARGE Bangkok. Move with purpose. Connect with people who play at your level.",
     host: 'Conor Graham, VerdeAds',
     venueName: 'Lumphini Park',
     locationName: 'Lumphini Park',
@@ -176,7 +177,7 @@ export const EVENTS: EventItem[] = [
     date: '2025-12-03',
     startTime: '9:00 AM',
     title: 'Ecom Black Code',
-    description: 'Strategy. Style. Connections. An exclusive evening for e-commerce leaders leveraging AI.',
+    description: "Strategy. Style. Connections. An exclusive evening for e-commerce leaders leveraging AI.",
     host: 'Ecom Cipher',
     venueName: 'Secret Venue',
     locationName: 'Secret Venue',
@@ -192,7 +193,7 @@ export const EVENTS: EventItem[] = [
     date: '2025-12-03',
     startTime: '10:00 AM',
     title: 'COFFEE & NETWORKING by VerdeAds',
-    description: '☕ Kickstart your conference week with good energy and premium coffee.',
+    description: "☕ Kickstart your conference week with good energy and premium coffee.",
     host: 'VerdeAds',
     venueName: 'Vivente Life & Coffee',
     locationName: 'Vivente Life & Coffee',
@@ -205,7 +206,7 @@ export const EVENTS: EventItem[] = [
     date: '2025-12-03',
     startTime: '11:30 AM',
     title: 'AW x STM Forum Alumni Meetup',
-    description: 'Private networking event for past and current members of the Affiliate World Forum (STM Forum).',
+    description: "Private networking event for past and current members of the Affiliate World Forum (STM Forum).",
     host: 'Affiliate World Conferences',
     venueName: 'Erawan Tea Room',
     locationName: 'Erawan Tea Room',
@@ -221,7 +222,7 @@ export const EVENTS: EventItem[] = [
     date: '2025-12-03',
     startTime: '1:00 PM',
     title: 'Farmer Jack MasterMind',
-    description: 'High-level roundtable event for elite affiliates hosted since 2016.',
+    description: "High-level roundtable event for elite affiliates hosted since 2016.",
     host: 'Farmer Jack',
     venueName: 'TBA',
     locationName: 'TBA',
@@ -236,7 +237,7 @@ export const EVENTS: EventItem[] = [
     date: '2026-01-14',
     startTime: '5:00 PM',
     title: 'Pre-Summit Ice Breaker',
-    description: 'Early arrival drinks for early birds hitting Vegas before the crowds.',
+    description: "Early arrival drinks for early birds hitting Vegas before the crowds.",
     host: 'Performance Club',
     venueName: 'Vanderpump Garden',
     locationName: 'Vanderpump Garden',
@@ -249,7 +250,7 @@ export const EVENTS: EventItem[] = [
     date: '2026-01-15',
     startTime: '9:00 PM',
     title: 'The Affiliate Ball',
-    description: 'The biggest party of the summit. Special guest performer TBA.',
+    description: "The biggest party of the summit. Special guest performer TBA.",
     host: 'Affiliate Ball',
     venueName: 'Hakkasan Nightclub',
     locationName: 'Hakkasan Nightclub',

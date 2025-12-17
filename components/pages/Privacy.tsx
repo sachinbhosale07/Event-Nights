@@ -4,14 +4,14 @@ import Footer from '../Footer';
 
 const Privacy: React.FC = () => {
   return (
-    <div className="min-h-screen bg-background text-gray-200 font-sans selection:bg-purple-500/30 selection:text-white flex flex-col">
+    <div className="min-h-screen bg-background text-txt-main font-sans selection:bg-primary/30 selection:text-white flex flex-col">
       <SimpleHeader />
       
       <main className="flex-1 container mx-auto px-4 py-12 md:py-16 max-w-3xl">
         <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Privacy Policy</h1>
-        <p className="text-gray-500 mb-10">Last updated: October 24, 2025</p>
+        <p className="text-txt-dim mb-10">Last updated: October 24, 2025</p>
 
-        <div className="space-y-8 text-gray-300 leading-relaxed">
+        <div className="space-y-8 text-txt-muted leading-relaxed">
             <section>
                 <h2 className="text-xl font-bold text-white mb-3">1. Information We Collect</h2>
                 <p>
@@ -53,7 +53,7 @@ const Privacy: React.FC = () => {
             <section>
                 <h2 className="text-xl font-bold text-white mb-3">6. Contact Us</h2>
                 <p>
-                    If you have any questions about this Privacy Policy, please contact us at <span className="text-purple-400">privacy@conferencenights.com</span>.
+                    If you have any questions about this Privacy Policy, please contact us at <span className="text-primary">privacy@conferencenights.com</span>.
                 </p>
             </section>
         </div>

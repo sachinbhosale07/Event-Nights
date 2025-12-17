@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import Hero from './Hero';
-import MonthNav from './MonthNav';
+import FeaturedIn from './FeaturedIn';
 import ConferenceSidebar from './ConferenceSidebar';
 import EventList from './EventList';
 import Footer from './Footer';
+import Newsletter from './Newsletter';
 import SubmitConferenceModal from './SubmitConferenceModal';
 import SubmitEventModal from './SubmitEventModal';
 import { MONTHS } from '../constants';
@@ -12,28 +13,55 @@ import { fetchConferences, fetchAllEvents, seedDatabase, createConference, creat
 import { Loader2, Database, Wifi, WifiOff, AlertTriangle } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 
+// Helper to generate dynamic months based on actual conference data
+const getCombinedMonths = (baseMonths: MonthOption[], conferences: Conference[]): MonthOption[] => {
+  const existingMap = new Map<string, MonthOption>();
+  // Initialize with base months
+  baseMonths.forEach(m => existingMap.set(`${m.year}-${m.monthIndex}`, m));
+
+  conferences.forEach(conf => {
+     if (!conf.month || !conf.year) return;
+     // Parse month name to index (e.g. "Dec" -> 11)
+     const date = new Date(`${conf.month} 1, ${conf.year}`);
+     if (isNaN(date.getTime())) return;
+     
+     const monthIndex = date.getMonth();
+     const key = `${conf.year}-${monthIndex}`;
+     
+     if (!existingMap.has(key)) {
+         existingMap.set(key, {
+             label: `${conf.month} ${conf.year}`,
+             year: conf.year,
+             monthIndex: monthIndex
+         });
+     }
+  });
+
+  // Sort chronologically
+  return Array.from(existingMap.values()).sort((a, b) => {
+     if (a.year !== b.year) return a.year - b.year;
+     return a.monthIndex - b.monthIndex;
+  });
+};
+
 const PublicHome: React.FC = () => {
-  // State
+  const [monthsList, setMonthsList] = useState<MonthOption[]>(MONTHS);
   const [selectedMonth, setSelectedMonth] = useState<MonthOption>(MONTHS[0]);
   const [selectedConferenceId, setSelectedConferenceId] = useState<string>('');
   const [searchParams, setSearchParams] = useSearchParams();
   
-  // Data State
   const [conferences, setConferences] = useState<Conference[]>([]);
   const [events, setEvents] = useState<EventItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSeeding, setIsSeeding] = useState(false);
   const [dbStatus, setDbStatus] = useState<{status: string, message: string} | null>(null);
 
-  // Modal State
   const [isSubmitConferenceModalOpen, setIsSubmitConferenceModalOpen] = useState(false);
   const [isSubmitEventModalOpen, setIsSubmitEventModalOpen] = useState(false);
 
-  // Initial Data Load
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Check DB Status
         const status = await getConnectionStatus();
         setDbStatus(status);
 
@@ -42,18 +70,20 @@ const PublicHome: React.FC = () => {
           fetchAllEvents()
         ]);
         
+        // 1. Calculate dynamic months from data
+        const dynamicMonths = getCombinedMonths(MONTHS, confsData);
+        setMonthsList(dynamicMonths);
         setConferences(confsData);
         setEvents(eventsData);
 
-        // Check URL for selected conference
+        // 2. Handle URL parameters
         const paramId = searchParams.get('c');
-        
         if (paramId) {
             const foundConf = confsData.find(c => c.id === paramId);
             if (foundConf) {
                 setSelectedConferenceId(foundConf.id);
-                // Sync month
-                const foundMonth = MONTHS.find(m => m.label.startsWith(foundConf.month) && m.year === foundConf.year);
+                // Use dynamicMonths to find the correct month object
+                const foundMonth = dynamicMonths.find(m => m.label.startsWith(foundConf.month) && m.year === foundConf.year);
                 if (foundMonth) {
                     setSelectedMonth(foundMonth);
                 }
@@ -62,22 +92,20 @@ const PublicHome: React.FC = () => {
             }
         }
 
-        // Default selection if no URL param or not found
-        // Prefer published conferences
+        // 3. Default selection logic
         if (confsData.length > 0 && !selectedConferenceId) {
-            const match = confsData.find(c => c.month === MONTHS[0].label.split(' ')[0] && c.year === MONTHS[0].year && c.status === 'Published');
+            // Find the first published conference to default to
             const firstPublished = confsData.find(c => c.status === 'Published');
             
-            if (match) {
-                 setSelectedConferenceId(match.id);
-            } else if (firstPublished) {
+            if (firstPublished) {
                  setSelectedConferenceId(firstPublished.id);
-                 // Also sync month to this fallback
-                 const fallbackMonth = MONTHS.find(m => m.label.startsWith(firstPublished.month) && m.year === firstPublished.year);
-                 if (fallbackMonth) setSelectedMonth(fallbackMonth);
+                 const publishedMonth = dynamicMonths.find(m => m.label.startsWith(firstPublished.month) && m.year === firstPublished.year);
+                 if (publishedMonth) setSelectedMonth(publishedMonth);
             } else {
-                 // Absolute fallback (e.g. only Drafts exist or fresh DB)
+                 // Fallback to first available conference even if draft
                  setSelectedConferenceId(confsData[0].id);
+                 const fallbackMonth = dynamicMonths.find(m => m.label.startsWith(confsData[0].month) && m.year === confsData[0].year);
+                 if (fallbackMonth) setSelectedMonth(fallbackMonth);
             }
         }
       } catch (error) {
@@ -88,17 +116,19 @@ const PublicHome: React.FC = () => {
     };
 
     loadData();
-  }, []); // Run once on mount
+  }, []);
 
   const handleSeed = async () => {
     setIsSeeding(true);
     try {
       await seedDatabase();
-      // Reload data
       const [confsData, eventsData] = await Promise.all([
         fetchConferences(),
         fetchAllEvents()
       ]);
+      // Update months after seeding
+      const dynamicMonths = getCombinedMonths(MONTHS, confsData);
+      setMonthsList(dynamicMonths);
       setConferences(confsData);
       setEvents(eventsData);
     } catch (e) {
@@ -110,7 +140,6 @@ const PublicHome: React.FC = () => {
 
   const handleSubmitConference = async (data: any) => {
     try {
-        // Format dates for display
         const start = new Date(data.startDate);
         const end = new Date(data.endDate);
         const monthShort = start.toLocaleString('en-US', { month: 'short' });
@@ -118,7 +147,6 @@ const PublicHome: React.FC = () => {
         const endDay = end.getDate();
         const year = start.getFullYear();
         
-        // Construct new conference object
         const newConfData: Omit<Conference, 'id'> = {
             name: data.name,
             location: data.fullLocation,
@@ -137,12 +165,11 @@ const PublicHome: React.FC = () => {
 
         await createConference(newConfData);
         
-        // Refresh data
+        // Reload data to reflect new months/conferences
         const confsData = await fetchConferences();
+        const dynamicMonths = getCombinedMonths(MONTHS, confsData);
+        setMonthsList(dynamicMonths);
         setConferences(confsData);
-        
-        // We do not switch to the new conference automatically since it's a Draft
-        // but we alert the user.
         
         alert("Conference submitted successfully! It is now pending review.");
     } catch (error) {
@@ -153,13 +180,11 @@ const PublicHome: React.FC = () => {
 
   const handleSubmitEvent = async (data: any) => {
       try {
-          // data is already formatted in SubmitEventModal
           await createEvent({
               ...data,
               status: 'Draft'
           });
           
-          // Refresh events
           const eventsData = await fetchAllEvents();
           setEvents(eventsData);
           
@@ -170,115 +195,105 @@ const PublicHome: React.FC = () => {
       }
   };
 
-  // Handler for conference selection
   const handleSelectConference = (id: string) => {
     setSelectedConferenceId(id);
     setSearchParams({ c: id });
   };
 
-  // Handler for month selection
   const handleSelectMonth = (month: MonthOption) => {
       setSelectedMonth(month);
-      // When month changes, try to auto-select first PUBLISHED conference in that month
       const confsInMonth = conferences.filter(c => c.month === month.label.split(' ')[0] && c.year === month.year && c.status === 'Published');
       
       if (confsInMonth.length > 0) {
           setSelectedConferenceId(confsInMonth[0].id);
           setSearchParams({ c: confsInMonth[0].id });
       } else {
-          // If no conferences, maybe clear the param or keep as is? 
-          // Clearing is safer to avoid confusion
           setSearchParams({});
           setSelectedConferenceId('');
       }
   };
 
-  // Filtering Logic - PUBLIC VIEW: SHOW ONLY PUBLISHED
   const filteredConferences = conferences.filter(
     (c) => c.month === selectedMonth.label.split(' ')[0] && c.year === selectedMonth.year && c.status === 'Published'
   );
 
   const displayedConferences = filteredConferences.length > 0 ? filteredConferences : [];
-
   const filteredEvents = events.filter(e => e.conferenceId === selectedConferenceId && e.status === 'Published');
+  const activeConference = displayedConferences.find(c => c.id === selectedConferenceId) || displayedConferences[0];
 
-  const selectedConference = conferences.find(c => c.id === selectedConferenceId) || conferences[0];
-
-  // Loading View
   if (isLoading) {
     return (
         <div className="min-h-screen bg-background flex flex-col items-center justify-center">
-            <Loader2 className="w-10 h-10 text-purple-500 animate-spin mb-4" />
-            <p className="text-gray-500 font-medium animate-pulse">Loading events...</p>
+            <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
+            <p className="text-txt-dim font-medium animate-pulse">Loading events...</p>
         </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background text-gray-200 font-sans selection:bg-purple-500/30 selection:text-white">
+    <div className="min-h-screen bg-background text-txt-main font-sans selection:bg-primary/30 selection:text-white">
       
       <Hero onOpenSubmitEventModal={() => setIsSubmitEventModalOpen(true)} />
       
-      <MonthNav 
-        months={MONTHS} 
-        selectedMonth={selectedMonth} 
-        onSelect={handleSelectMonth} 
-      />
-
-      <main className="container mx-auto px-4 md:px-6 py-8 md:py-12 relative">
-        {conferences.length === 0 && !isLoading ? (
-            <div className="flex flex-col items-center justify-center py-20 border border-dashed border-white/10 rounded-2xl bg-white/[0.02]">
-                <Database size={48} className="text-gray-600 mb-4" />
-                <h2 className="text-xl font-bold mb-2">No Data Available</h2>
-                <p className="text-gray-500 mb-6 max-w-md text-center">
-                    The database appears to be empty.
-                </p>
-                <button 
-                    onClick={handleSeed}
-                    disabled={isSeeding}
-                    className="bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white px-6 py-3 rounded-full font-bold transition-all shadow-lg shadow-purple-900/20 flex items-center gap-2"
-                >
-                    {isSeeding ? <Loader2 className="animate-spin" size={18} /> : <Database size={18} />}
-                    Reset Demo Data
-                </button>
-            </div>
-        ) : (
-            <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
+      <FeaturedIn />
+      
+      <main className="container mx-auto px-4 md:px-6 py-12">
             
-            <ConferenceSidebar 
-                conferences={displayedConferences}
-                selectedConferenceId={selectedConferenceId}
-                onSelect={handleSelectConference}
-                onOpenSubmitModal={() => setIsSubmitConferenceModalOpen(true)}
-            />
-            
-            {displayedConferences.length > 0 && selectedConference ? (
-                <div className="flex-1 min-w-0">
-                    <EventList 
-                        conference={selectedConference} 
-                        events={filteredEvents}
-                        onOpenSubmitEventModal={() => setIsSubmitEventModalOpen(true)}
-                    />
+            {conferences.length === 0 && !isLoading ? (
+                <div className="flex flex-col items-center justify-center py-20 border border-dashed border-white/10 rounded-xl bg-surface/30">
+                    <Database size={48} className="text-txt-dim mb-4" />
+                    <h2 className="text-xl font-bold mb-2 text-white">No Data Available</h2>
+                    <p className="text-txt-muted mb-6 max-w-md text-center">
+                        The database appears to be empty.
+                    </p>
+                    <button 
+                        onClick={handleSeed}
+                        disabled={isSeeding}
+                        className="bg-primary hover:bg-primaryHover disabled:opacity-50 text-background px-6 py-3 rounded-lg font-bold transition-all shadow-lg shadow-primary/20 flex items-center gap-2"
+                    >
+                        {isSeeding ? <Loader2 className="animate-spin" size={18} /> : <Database size={18} />}
+                        Reset Demo Data
+                    </button>
                 </div>
             ) : (
-                <div className="flex-1 flex flex-col items-center justify-center py-20 text-gray-500 border border-white/5 rounded-2xl bg-white/[0.02]">
-                    <p>No conferences listed for {selectedMonth.label}</p>
+                <div className="flex flex-col lg:flex-row gap-8 items-start">
+                    
+                    {/* Left: Conferences List with Integrated Timeline */}
+                    <ConferenceSidebar 
+                        months={monthsList}
+                        selectedMonth={selectedMonth}
+                        onSelectMonth={handleSelectMonth}
+                        conferences={displayedConferences}
+                        selectedConferenceId={activeConference?.id || ''}
+                        onSelect={handleSelectConference}
+                        onOpenSubmitModal={() => setIsSubmitConferenceModalOpen(true)}
+                    />
+                    
+                    {/* Right: Event Schedule Table */}
+                    <EventList 
+                        conference={activeConference} 
+                        events={filteredEvents}
+                        onOpenSubmitEventModal={() => setIsSubmitEventModalOpen(true)}
+                        months={monthsList}
+                        selectedMonth={selectedMonth}
+                        onSelectMonth={handleSelectMonth}
+                    />
                 </div>
             )}
-            </div>
-        )}
       </main>
 
+      <Newsletter />
+
       <Footer />
-      
+
       {/* Database Status Indicator */}
       {dbStatus && (
-        <div className="fixed bottom-4 right-4 z-50 animate-fade-in-up">
+        <div className="fixed bottom-4 right-4 z-[60] animate-fade-in-up">
             <div className={`
                 flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-bold shadow-lg backdrop-blur-md
-                ${dbStatus.status === 'connected' ? 'bg-green-500/10 border-green-500/30 text-green-400' : ''}
+                ${dbStatus.status === 'connected' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : ''}
                 ${dbStatus.status === 'missing_tables' ? 'bg-red-500/10 border-red-500/30 text-red-400' : ''}
-                ${dbStatus.status === 'demo' ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400' : ''}
+                ${dbStatus.status === 'demo' ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : ''}
                 ${dbStatus.status === 'error' ? 'bg-red-500/10 border-red-500/30 text-red-400' : ''}
             `}>
                 {dbStatus.status === 'connected' && <Wifi size={12} />}
@@ -300,7 +315,7 @@ const PublicHome: React.FC = () => {
         isOpen={isSubmitEventModalOpen}
         onClose={() => setIsSubmitEventModalOpen(false)}
         onSubmit={handleSubmitEvent}
-        conferences={conferences} // Pass all conferences so user can select draft ones if they really want, or just stick to list
+        conferences={conferences}
         preSelectedConferenceId={selectedConferenceId}
       />
     </div>

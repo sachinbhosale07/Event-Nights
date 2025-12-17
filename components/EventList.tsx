@@ -1,18 +1,25 @@
+
 import React, { useState, useEffect } from 'react';
-import { MapPin, Calendar, ExternalLink, Star, ArrowUpRight, Clock, Plus, CalendarPlus } from 'lucide-react';
-import { Conference, EventItem } from '../types';
+import { ExternalLink, Calendar as CalendarIcon, Star, MapPin, ArrowUpRight, CalendarPlus, Clock, User, Users, Tag, Image as ImageIcon } from 'lucide-react';
+import { Conference, EventItem, MonthOption } from '../types';
+import { generateGoogleCalendarUrl } from '../utils';
 
 interface EventListProps {
-  conference: Conference;
+  conference?: Conference;
   events: EventItem[];
   onOpenSubmitEventModal: () => void;
+  months: MonthOption[];
+  selectedMonth: MonthOption;
+  onSelectMonth: (m: MonthOption) => void;
 }
 
-const EventList: React.FC<EventListProps> = ({ conference, events, onOpenSubmitEventModal }) => {
-  // State for saved events
+const EventList: React.FC<EventListProps> = ({ 
+    conference, 
+    events,
+    onOpenSubmitEventModal,
+}) => {
   const [savedEventIds, setSavedEventIds] = useState<Set<string>>(new Set());
 
-  // Load saved events from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem('cn_saved_events');
     if (saved) {
@@ -35,6 +42,18 @@ const EventList: React.FC<EventListProps> = ({ conference, events, onOpenSubmitE
     localStorage.setItem('cn_saved_events', JSON.stringify(Array.from(newSaved)));
   };
 
+  if (!conference) {
+      return (
+          <div className="flex-1 min-w-0 bg-surface border border-white/5 rounded-3xl p-20 text-center flex flex-col items-center justify-center shadow-lg animate-fade-in-up">
+              <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-6 border border-white/5">
+                 <CalendarIcon size={32} className="text-txt-dim opacity-50" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Select a Conference</h3>
+              <p className="text-txt-muted max-w-sm text-sm">Choose a conference from the sidebar to view the official schedule and side-events.</p>
+          </div>
+      );
+  }
+
   // Group events by date
   const groupedEvents: Record<string, EventItem[]> = {};
   events.forEach(event => {
@@ -46,248 +65,241 @@ const EventList: React.FC<EventListProps> = ({ conference, events, onOpenSubmitE
 
   const sortedDates = Object.keys(groupedEvents).sort();
 
-  const getGoogleCalendarUrl = (event: EventItem) => {
-    const parseTime = (dateStr: string, timeStr: string) => {
-        const [year, month, day] = dateStr.split('-').map(Number);
-        
-        let hours = 0;
-        let minutes = 0;
-        
-        // Normalize input
-        const timeLower = timeStr.toLowerCase();
-        const isPM = timeLower.includes('pm');
-        const isAM = timeLower.includes('am');
-        
-        // Remove text to get numbers
-        const cleanTime = timeLower.replace('am', '').replace('pm', '').trim();
-        const parts = cleanTime.split(':');
-        
-        if (parts.length >= 2) {
-            hours = parseInt(parts[0], 10);
-            minutes = parseInt(parts[1], 10);
-        } else if (parts.length === 1) {
-             hours = parseInt(parts[0], 10);
-        }
-
-        if (isPM && hours < 12) hours += 12;
-        if (isAM && hours === 12) hours = 0;
-
-        return new Date(year, month - 1, day, hours, minutes);
-    };
-
-    try {
-        const startDate = parseTime(event.date, event.startTime);
-        let endDate: Date;
-        
-        if (event.endTime) {
-            endDate = parseTime(event.date, event.endTime);
-            // Handle overnight events (end time < start time implies next day)
-            if (endDate < startDate) {
-                endDate.setDate(endDate.getDate() + 1);
-            }
-        } else {
-            // Default to 1 hour duration if no end time specified
-            endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
-        }
-
-        // Format as YYYYMMDDTHHMMSS (Floating time - uses user's calendar timezone)
-        const formatFloating = (date: Date) => {
-            const pad = (n: number) => n.toString().padStart(2, '0');
-            return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}T${pad(date.getHours())}${pad(date.getMinutes())}00`;
-        };
-
-        const startStr = formatFloating(startDate);
-        const endStr = formatFloating(endDate);
-
-        const details = encodeURIComponent(`${event.description}\n\nHost: ${event.host}\nLink: ${event.registrationUrl || 'N/A'}`);
-        const location = encodeURIComponent(`${event.venueName}${event.locationName && event.locationName !== event.venueName ? `, ${event.locationName}` : ''}`);
-        const title = encodeURIComponent(event.title);
-
-        return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startStr}/${endStr}&details=${details}&location=${location}`;
-    } catch (e) {
-        console.error("Error generating calendar link", e);
-        return "#";
-    }
-  };
-
   return (
-    <div className="flex-1 min-w-0">
-      {/* Header Info */}
-      <div className="mb-8 relative overflow-hidden bg-gradient-to-br from-white/[0.03] to-transparent p-6 md:p-8 rounded-2xl border border-white/5">
-        <div className="relative z-10">
-            <h2 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3 mb-4">
-            {conference.name}
-            <a 
-                href="#" 
-                className="opacity-50 hover:opacity-100 transition-opacity"
-                title="Visit Website"
-            >
-                <ExternalLink size={20} />
-            </a>
-            </h2>
-            
-            <div className="flex flex-wrap gap-4 text-sm text-gray-400 mb-6 items-center">
-                <div className="flex items-center gap-2 text-gray-300">
-                    <MapPin size={16} className="text-purple-500" />
-                    {conference.location}
+    <div className="flex-1 min-w-0 flex flex-col gap-10 animate-fade-in-up pb-20">
+      
+      {/* Conference Header Card */}
+      <div className="bg-surface border border-white/5 rounded-3xl p-8 md:p-10 relative overflow-hidden group shadow-2xl">
+         {/* Background Decoration */}
+         <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-gradient-to-br from-primary/10 to-transparent rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+         
+         <div className="relative z-10 flex flex-col gap-8">
+            <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+                <div>
+                    <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tighter mb-6 leading-[1.1]">{conference.name}</h2>
+                    <div className="flex flex-wrap items-center gap-3 text-sm">
+                        <span className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-xl border border-white/5 text-white/90">
+                            <MapPin size={16} className="text-primary" /> 
+                            <span className="font-medium">{conference.location}</span>
+                        </span>
+                        <span className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-xl border border-white/5 text-white/90">
+                            <CalendarIcon size={16} className="text-primary" /> 
+                            <span className="font-medium">{conference.dateRange}, {conference.year}</span>
+                        </span>
+                    </div>
                 </div>
-                <div className="w-1 h-1 bg-gray-700 rounded-full"></div>
-                <div className="flex items-center gap-2 text-gray-300">
-                    <Calendar size={16} className="text-pink-500" />
-                    {conference.dateRange}
-                </div>
+                
+                {conference.websiteUrl && (
+                    <a href={conference.websiteUrl} target="_blank" rel="noreferrer" className="shrink-0 flex items-center gap-2 text-xs font-bold text-background bg-primary hover:bg-primaryHover px-6 py-3 rounded-xl transition-all shadow-lg shadow-primary/20 hover:scale-105 active:scale-95">
+                        Official Website <ArrowUpRight size={14} />
+                    </a>
+                )}
             </div>
             
-            <p className="text-gray-400 max-w-3xl leading-relaxed text-sm">
-            {conference.description}
+            <p className="text-txt-muted text-lg font-light leading-relaxed max-w-3xl border-t border-white/5 pt-6">
+                {conference.description}
             </p>
-        </div>
+         </div>
       </div>
 
-      {/* Events Table Container */}
-      <div className="bg-surfaceHighlight/30 border border-white/5 rounded-2xl overflow-hidden backdrop-blur-sm">
+      {/* Visual Divider */}
+      <div className="flex items-center gap-4 text-[11px] font-bold uppercase tracking-[0.2em] text-txt-dim px-2">
+          <div className="h-px bg-white/10 flex-1"></div>
+          <span>Event Schedule</span>
+          <div className="h-px bg-white/10 flex-1"></div>
+      </div>
+
+      {/* Timeline Event Container */}
+      <div className="relative">
         
-        {/* Table Headers - Inside container for perfect alignment */}
-        <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest border-b border-white/5 bg-white/[0.01]">
-            <div className="col-span-2">Time</div>
-            <div className="col-span-4">Event Details</div>
-            <div className="col-span-2">Host</div>
-            <div className="col-span-2">Location</div>
-            <div className="col-span-1">Cap.</div>
-            <div className="col-span-1 text-right">Action</div>
-        </div>
-
-        {sortedDates.map((date) => {
-            const dateObj = new Date(date);
-            const dateString = dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-            
-            return (
-                <div key={date}>
-                    {/* Date Header */}
-                    <div className="bg-white/[0.05] px-6 py-3 border-y border-white/5 first:border-t-0 flex items-center gap-3">
-                        <div className="w-1.5 h-1.5 rounded-full bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]"></div>
-                        <h3 className="text-xs font-bold text-gray-300 uppercase tracking-widest">{dateString}</h3>
-                    </div>
-
-                    {groupedEvents[date].map((event) => {
-                         return (
-                            <div key={event.id} className="group border-b border-white/5 hover:bg-white/[0.02] transition-colors last:border-b-0">
-                                <div className="px-6 py-5 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-                                    
-                                    {/* Time */}
-                                    <div className="md:col-span-2 flex flex-row md:flex-col items-center md:items-start gap-3 md:gap-1">
-                                        <div className="flex items-center gap-2">
-                                            <div className="text-white font-bold text-sm md:text-base bg-white/5 px-2 py-1 rounded-md border border-white/5 md:bg-transparent md:border-0 md:p-0 md:rounded-none">
-                                                {event.startTime}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Event Details */}
-                                    <div className="md:col-span-4 pr-2">
-                                        <div className="text-white font-bold text-base mb-1 group-hover:text-purple-300 transition-colors cursor-pointer flex items-center gap-2">
-                                            {event.title}
-                                            {/* Tag example */}
-                                            {event.tags && event.tags.includes('VIP') && (
-                                                <span className="text-[10px] bg-yellow-500/20 text-yellow-200 px-1.5 py-0.5 rounded border border-yellow-500/30 font-bold uppercase">VIP</span>
-                                            )}
-                                        </div>
-                                        <div className="text-xs text-gray-500 leading-relaxed line-clamp-2 group-hover:text-gray-400">
-                                            {event.description}
-                                        </div>
-                                    </div>
-
-                                    {/* Host */}
-                                    <div className="md:col-span-2 mt-2 md:mt-0">
-                                        <div className="md:hidden text-[10px] text-gray-600 uppercase font-bold mb-1">Host</div>
-                                        <div className="text-xs md:text-sm text-gray-400 font-medium">
-                                            {event.host}
-                                        </div>
-                                    </div>
-
-                                    {/* Location */}
-                                    <div className="md:col-span-2 mt-2 md:mt-0">
-                                        <div className="md:hidden text-[10px] text-gray-600 uppercase font-bold mb-1">Location</div>
-                                        <div className="text-xs md:text-sm text-gray-400 truncate pr-2 flex items-center gap-1.5" title={event.locationName}>
-                                            <MapPin size={12} className="text-gray-600" />
-                                            {event.locationName}
-                                        </div>
-                                    </div>
-
-                                    {/* Capacity & Actions Wrapper */}
-                                    {/* Mobile: Flex Row. Desktop: Grid Columns 2 to match header columns 11 & 12 */}
-                                    <div className="col-span-1 md:col-span-2 mt-3 md:mt-0 pt-3 md:pt-0 border-t border-white/5 md:border-0 flex items-center justify-between md:grid md:grid-cols-2 md:gap-4">
-                                         
-                                         {/* Capacity */}
-                                         <div className="md:col-span-1">
-                                            <div className="md:hidden text-[10px] text-gray-600 uppercase font-bold mb-1">Cap.</div>
-                                            <div className="text-xs md:text-sm text-gray-500 font-medium md:text-left">
-                                                {event.capacity ? `${event.capacity}` : '-'}
-                                            </div>
-                                        </div>
-
-                                        {/* Actions */}
-                                        <div className="md:col-span-1 flex justify-end gap-1 text-gray-500">
-                                            <button 
-                                                onClick={() => toggleSave(event.id)}
-                                                className={`p-2 rounded-lg transition-colors ${savedEventIds.has(event.id) ? 'text-yellow-400 hover:text-yellow-300 hover:bg-white/10' : 'hover:bg-white/10 hover:text-white'}`}
-                                                title={savedEventIds.has(event.id) ? "Unsave Event" : "Save Event"}
-                                            >
-                                                <Star size={16} fill={savedEventIds.has(event.id) ? "currentColor" : "none"} />
-                                            </button>
-                                            
-                                            <a 
-                                                href={getGoogleCalendarUrl(event)}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="p-2 rounded-lg hover:bg-white/10 hover:text-white transition-colors"
-                                                title="Add to Google Calendar"
-                                            >
-                                                <CalendarPlus size={16} />
-                                            </a>
-
-                                            {event.link ? (
-                                                <a 
-                                                    href={event.link} 
-                                                    target="_blank"
-                                                    rel="noopener noreferrer" 
-                                                    className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white transition-colors border border-white/5 hover:border-white/20" 
-                                                    title="Visit Event Website"
-                                                >
-                                                    <ArrowUpRight size={16} />
-                                                </a>
-                                            ) : (
-                                                <button disabled className="p-2 rounded-lg bg-white/5 text-gray-700 border border-white/5 cursor-not-allowed" title="No Link Available">
-                                                    <ArrowUpRight size={16} />
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-
+        {sortedDates.length > 0 ? (
+            <div className="space-y-16">
+                {sortedDates.map((date, dateIndex) => {
+                    const dateObj = new Date(date);
+                    const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+                    const dateNum = dateObj.toLocaleDateString('en-US', { day: 'numeric', month: 'long' });
+                    
+                    return (
+                        <div key={date} className="relative">
+                            
+                            {/* Sticky Date Header */}
+                            <div className="sticky top-[88px] z-30 mb-8 flex items-center gap-4 bg-background/95 backdrop-blur-sm py-2 -mx-2 px-2 rounded-xl border border-transparent">
+                                <div className="h-12 w-12 rounded-xl bg-surfaceHighlight border border-white/10 flex flex-col items-center justify-center shadow-glass shrink-0">
+                                    <span className="text-[10px] uppercase text-primary font-bold leading-none mb-0.5">{dateObj.toLocaleString('en-US', { month: 'short' })}</span>
+                                    <span className="text-lg font-bold text-white leading-none">{dateObj.getDate()}</span>
                                 </div>
+                                <div className="flex flex-col">
+                                    <h3 className="text-xl font-bold text-white tracking-tight">{dayName}</h3>
+                                    <span className="text-xs text-txt-dim uppercase tracking-wider">{dateNum}</span>
+                                </div>
+                                <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent ml-4"></div>
                             </div>
-                         );
-                    })}
+
+                            {/* Events for this date */}
+                            <div className="relative ml-6 md:ml-[5.5rem] border-l border-white/10 space-y-6 pb-4">
+                                
+                                {groupedEvents[date].map((event, idx) => {
+                                    const isSaved = savedEventIds.has(event.id);
+                                    const calendarUrl = generateGoogleCalendarUrl(event);
+                                    
+                                    return (
+                                        <div key={event.id} className="relative pl-8 md:pl-10 group">
+                                            
+                                            {/* Timeline Node */}
+                                            <div className="absolute -left-[5px] top-8 w-2.5 h-2.5 rounded-full bg-surface border-2 border-primary ring-4 ring-background z-10 shadow-[0_0_10px_rgba(45,212,191,0.5)] group-hover:scale-125 transition-transform duration-300"></div>
+
+                                            {/* Time Label (Desktop Absolute) */}
+                                            <div className="hidden md:flex flex-col absolute -left-[7rem] top-7 w-24 items-end">
+                                                <span className="font-mono text-sm font-bold text-primary tabular-nums opacity-80 group-hover:opacity-100 transition-opacity">{event.startTime}</span>
+                                                {event.endTime && (
+                                                    <span className="font-mono text-[10px] text-txt-dim tabular-nums mt-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                                                        {event.endTime}
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            {/* Event Card */}
+                                            <div className="relative bg-surface border border-white/5 rounded-2xl p-6 md:p-8 hover:border-primary/30 transition-all duration-300 shadow-sm group-hover:shadow-glow group-hover:-translate-y-1 overflow-hidden">
+                                                
+                                                {/* Mobile Time Pill */}
+                                                <div className="md:hidden mb-4">
+                                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs font-bold text-primary">
+                                                        <Clock size={12} /> {event.startTime}{event.endTime ? ` - ${event.endTime}` : ''}
+                                                    </span>
+                                                </div>
+
+                                                {/* Event Image */}
+                                                {event.image && (
+                                                    <div className="mb-6 rounded-xl overflow-hidden h-48 md:h-64 w-full relative border border-white/5 bg-surfaceHighlight">
+                                                        <img src={event.image} alt={event.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                                                    </div>
+                                                )}
+
+                                                {/* Header: Title & Badges */}
+                                                <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-4">
+                                                    <h3 className="text-xl md:text-2xl font-bold text-white leading-tight group-hover:text-primary transition-colors">
+                                                        {event.title}
+                                                    </h3>
+                                                    <div className="flex flex-wrap items-center justify-end gap-2 shrink-0">
+                                                        {event.tags?.includes('VIP') && (
+                                                            <span className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 text-[10px] font-bold text-amber-400 uppercase tracking-wide shadow-[0_0_15px_rgba(245,158,11,0.15)] backdrop-blur-md">
+                                                                VIP Access
+                                                            </span>
+                                                        )}
+                                                        {event.tags?.includes('Party') && (
+                                                            <span className="px-2.5 py-1 rounded-lg bg-purple-500/10 border border-purple-500/20 text-[10px] font-bold text-purple-400 uppercase tracking-wide">
+                                                                Party
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {/* Body: Description & Metadata */}
+                                                <div className="mb-8">
+                                                    <p className="text-txt-muted text-sm leading-relaxed mb-6">
+                                                        {event.description}
+                                                    </p>
+                                                    
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-8 text-sm p-4 rounded-xl bg-white/[0.02] border border-white/[0.02]">
+                                                        {/* Host */}
+                                                        <div className="flex items-center gap-3 text-txt-dim group-hover:text-txt-main transition-colors">
+                                                            <User size={16} className="text-primary/70 shrink-0" />
+                                                            <span className="truncate">Hosted by <span className="font-semibold text-white">{event.host}</span></span>
+                                                        </div>
+                                                        
+                                                        {/* Location */}
+                                                        <div className="flex items-center gap-3 text-txt-dim group-hover:text-txt-main transition-colors">
+                                                            <MapPin size={16} className="text-primary/70 shrink-0" />
+                                                            <div className="flex flex-col leading-none">
+                                                                <span className="font-medium text-white">{event.locationName}</span>
+                                                                {event.locationAddress && <span className="text-[10px] text-txt-dim mt-1">{event.locationAddress}</span>}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Capacity */}
+                                                        {event.capacity && (
+                                                            <div className="flex items-center gap-3 text-txt-dim group-hover:text-txt-main transition-colors">
+                                                                <Users size={16} className="text-primary/70 shrink-0" />
+                                                                <span className="truncate">Capacity: <span className="font-semibold text-white">{event.capacity}</span></span>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Category */}
+                                                        {event.category && (
+                                                            <div className="flex items-center gap-3 text-txt-dim group-hover:text-txt-main transition-colors">
+                                                                <Tag size={16} className="text-primary/70 shrink-0" />
+                                                                <span className="truncate">Category: <span className="font-semibold text-white">{event.category}</span></span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {/* Footer: Actions */}
+                                                <div className="pt-6 border-t border-white/5 flex flex-wrap items-center justify-between gap-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <button 
+                                                            onClick={() => toggleSave(event.id)}
+                                                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
+                                                                isSaved 
+                                                                ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' 
+                                                                : 'bg-white/5 border-white/5 text-txt-muted hover:text-white hover:bg-white/10'
+                                                            }`}
+                                                        >
+                                                            <Star size={14} fill={isSaved ? "currentColor" : "none"} />
+                                                            {isSaved ? 'Saved' : 'Save'}
+                                                        </button>
+
+                                                        <a 
+                                                            href={calendarUrl}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-white/5 border border-white/5 text-txt-muted hover:text-white hover:bg-white/10 transition-colors"
+                                                        >
+                                                            <CalendarPlus size={14} /> Add to Cal
+                                                        </a>
+                                                    </div>
+
+                                                    <a 
+                                                        href={event.registrationUrl || event.link}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold transition-all shadow-lg ${
+                                                            !event.registrationUrl && !event.link 
+                                                            ? 'opacity-50 pointer-events-none bg-white/5 text-txt-dim' 
+                                                            : 'bg-primary hover:bg-primaryHover text-background shadow-primary/20 hover:shadow-primary/40 hover:-translate-y-0.5'
+                                                        }`}
+                                                    >
+                                                        Register <ArrowUpRight size={14} />
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )
+                })}
+            </div>
+        ) : (
+            <div className="w-full min-h-[400px] flex flex-col items-center justify-center bg-surface border border-white/5 rounded-3xl relative overflow-hidden group transition-colors hover:border-white/10">
+                 {/* Decorative background */}
+                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                 
+                <div className="w-20 h-20 rounded-2xl bg-white/[0.03] flex items-center justify-center mb-6 border border-white/5 shadow-inner relative z-10 group-hover:scale-110 transition-transform duration-300">
+                    <CalendarIcon size={32} className="text-txt-dim opacity-50" />
                 </div>
-            );
-        })}
-        
-        {sortedDates.length === 0 && (
-             <div className="py-24 text-center flex flex-col items-center justify-center bg-transparent">
-                <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mb-4 border border-white/5">
-                    <Calendar size={24} className="text-gray-600" />
-                </div>
-                <h3 className="text-white font-bold text-lg mb-2">No events found</h3>
-                <p className="text-gray-500 text-sm mb-8 max-w-xs leading-relaxed">
-                    Be the first to add an event for this conference.
+                <h4 className="text-2xl font-bold text-white mb-3 relative z-10">No events scheduled yet</h4>
+                <p className="max-w-xs mx-auto text-sm text-txt-muted leading-relaxed mb-8 text-center relative z-10">
+                    Be the first to list an event for <span className="text-white font-medium">{conference.name}</span>.
                 </p>
                 <button 
-                  onClick={onOpenSubmitEventModal}
-                  className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-2.5 rounded-full text-sm font-bold transition-all shadow-lg shadow-purple-900/20 flex items-center gap-2"
+                    onClick={onOpenSubmitEventModal}
+                    className="relative z-10 bg-primary hover:bg-primaryHover text-background text-sm font-bold flex items-center gap-2 px-8 py-4 rounded-xl transition-all shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:-translate-y-0.5"
                 >
-                    <Plus size={16} /> List Event
+                    Submit an Event <ArrowUpRight size={16} />
                 </button>
-             </div>
+            </div>
         )}
       </div>
     </div>

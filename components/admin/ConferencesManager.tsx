@@ -15,7 +15,6 @@ const ConferencesManager: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<Conference>>({});
@@ -62,7 +61,6 @@ const ConferencesManager: React.FC = () => {
 
   const handleSave = async (status: 'Draft' | 'Published') => {
     try {
-      // Auto-generate some derived fields for display if not manually set
       const derivedLocation = `${formData.city}, ${formData.country}`;
       const startDateObj = new Date(formData.startDate || '');
       const endDateObj = new Date(formData.endDate || '');
@@ -76,7 +74,7 @@ const ConferencesManager: React.FC = () => {
           month: shortMonth,
           year: year,
           dateRange: dateRange,
-          status: status // Override status based on button click
+          status: status
       };
 
       if (editingId) {
@@ -117,34 +115,34 @@ const ConferencesManager: React.FC = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
            <h1 className="text-2xl font-bold text-white mb-1">Conferences & Venues</h1>
-           <p className="text-gray-500 text-sm">Manage parent conferences. Click 'View' to see attached events.</p>
+           <p className="text-txt-dim text-sm">Manage parent conferences. Click 'View' to see attached events.</p>
         </div>
         <button 
             onClick={() => handleOpenModal()}
-            className="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition-colors"
+            className="bg-primary hover:bg-primaryHover text-background px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition-colors shadow-lg shadow-primary/20"
         >
             <Plus size={18} /> Add Conference
         </button>
       </div>
 
       <div className="mb-6 relative max-w-md">
-            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-txt-dim" />
             <input 
                 type="text" 
                 placeholder="Search conferences..." 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-surfaceHighlight border border-white/10 rounded-lg pl-10 pr-4 py-2.5 text-white focus:border-purple-500 focus:outline-none"
+                className="w-full bg-surface border border-white/10 rounded-lg pl-10 pr-4 py-2.5 text-white focus:border-primary/50 focus:outline-none placeholder-txt-dim"
             />
       </div>
 
-      <div className="bg-surfaceHighlight border border-white/5 rounded-xl overflow-hidden">
+      <div className="bg-surface border border-white/5 rounded-xl overflow-hidden">
         {loading ? (
-           <div className="p-8 flex justify-center text-purple-500"><Loader2 className="animate-spin" /></div>
+           <div className="p-8 flex justify-center text-primary"><Loader2 className="animate-spin" /></div>
         ) : (
             <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-gray-400">
-                <thead className="bg-white/5 text-gray-200 uppercase text-xs font-bold">
+            <table className="w-full text-left text-sm text-txt-muted">
+                <thead className="bg-white/[0.02] text-txt-dim uppercase text-xs font-bold">
                 <tr>
                     <th className="px-6 py-4">Name</th>
                     <th className="px-6 py-4">Location</th>
@@ -157,20 +155,20 @@ const ConferencesManager: React.FC = () => {
                 {filteredConferences.map((conf) => (
                     <tr key={conf.id} className="hover:bg-white/[0.02] transition-colors group">
                     <td className="px-6 py-4 font-medium text-white">
-                        <Link to={`/admin/conferences/${conf.id}`} className="hover:text-purple-400 transition-colors">
+                        <Link to={`/admin/conferences/${conf.id}`} className="hover:text-primary transition-colors">
                             {conf.name}
                         </Link>
                     </td>
                     <td className="px-6 py-4">{conf.location}</td>
                     <td className="px-6 py-4">{conf.dateRange}, {conf.year}</td>
                     <td className="px-6 py-4">
-                        <span className={`px-2 py-1 rounded text-xs font-bold border ${conf.status === 'Published' ? 'bg-green-500/20 text-green-300 border-green-500/30' : 'bg-gray-500/20 text-gray-300 border-gray-500/30'}`}>
+                        <span className={`px-2 py-1 rounded text-xs font-bold border ${conf.status === 'Published' ? 'bg-secondary/10 text-secondary border-secondary/20' : 'bg-white/5 text-txt-muted border-white/10'}`}>
                             {conf.status || 'Draft'}
                         </span>
                     </td>
                     <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                            <Link to={`/admin/conferences/${conf.id}`} className="p-2 text-gray-400 hover:bg-white/10 hover:text-white rounded-lg" title="View Details">
+                            <Link to={`/admin/conferences/${conf.id}`} className="p-2 text-txt-muted hover:bg-white/10 hover:text-white rounded-lg" title="View Details">
                                 <Eye size={16} />
                             </Link>
                             <button onClick={() => handleOpenModal(conf)} className="p-2 text-blue-400 hover:bg-blue-400/10 rounded-lg" title="Edit">
@@ -194,18 +192,18 @@ const ConferencesManager: React.FC = () => {
             <div className="bg-surface border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                 <div className="flex justify-between items-center p-6 border-b border-white/10">
                     <h2 className="text-xl font-bold text-white">{editingId ? 'Edit Conference' : 'New Conference'}</h2>
-                    <button onClick={() => setIsModalOpen(false)} className="text-gray-500 hover:text-white">
+                    <button onClick={() => setIsModalOpen(false)} className="text-txt-dim hover:text-white">
                         <X size={24} />
                     </button>
                 </div>
                 
                 <form id="conference-form" className="p-6 space-y-4" onSubmit={(e) => e.preventDefault()}>
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-400">Conference Name</label>
+                        <label className="text-sm font-medium text-txt-muted">Conference Name</label>
                         <input 
                             required
                             type="text" 
-                            className="w-full bg-background border border-white/10 rounded-lg px-4 py-2 text-white focus:border-purple-500 outline-none"
+                            className="w-full bg-background border border-white/10 rounded-lg px-4 py-2 text-white focus:border-primary/50 outline-none"
                             value={formData.name}
                             onChange={e => setFormData({...formData, name: e.target.value})}
                         />
@@ -213,21 +211,21 @@ const ConferencesManager: React.FC = () => {
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-400">City</label>
+                            <label className="text-sm font-medium text-txt-muted">City</label>
                             <input 
                                 required
                                 type="text" 
-                                className="w-full bg-background border border-white/10 rounded-lg px-4 py-2 text-white focus:border-purple-500 outline-none"
+                                className="w-full bg-background border border-white/10 rounded-lg px-4 py-2 text-white focus:border-primary/50 outline-none"
                                 value={formData.city}
                                 onChange={e => setFormData({...formData, city: e.target.value})}
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-400">Country</label>
+                            <label className="text-sm font-medium text-txt-muted">Country</label>
                             <input 
                                 required
                                 type="text" 
-                                className="w-full bg-background border border-white/10 rounded-lg px-4 py-2 text-white focus:border-purple-500 outline-none"
+                                className="w-full bg-background border border-white/10 rounded-lg px-4 py-2 text-white focus:border-primary/50 outline-none"
                                 value={formData.country}
                                 onChange={e => setFormData({...formData, country: e.target.value})}
                             />
@@ -236,21 +234,21 @@ const ConferencesManager: React.FC = () => {
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-400">Start Date</label>
+                            <label className="text-sm font-medium text-txt-muted">Start Date</label>
                             <input 
                                 required
                                 type="date" 
-                                className="w-full bg-background border border-white/10 rounded-lg px-4 py-2 text-white focus:border-purple-500 outline-none"
+                                className="w-full bg-background border border-white/10 rounded-lg px-4 py-2 text-white focus:border-primary/50 outline-none"
                                 value={formData.startDate}
                                 onChange={e => setFormData({...formData, startDate: e.target.value})}
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-400">End Date</label>
+                            <label className="text-sm font-medium text-txt-muted">End Date</label>
                             <input 
                                 required
                                 type="date" 
-                                className="w-full bg-background border border-white/10 rounded-lg px-4 py-2 text-white focus:border-purple-500 outline-none"
+                                className="w-full bg-background border border-white/10 rounded-lg px-4 py-2 text-white focus:border-primary/50 outline-none"
                                 value={formData.endDate}
                                 onChange={e => setFormData({...formData, endDate: e.target.value})}
                             />
@@ -259,10 +257,10 @@ const ConferencesManager: React.FC = () => {
 
                     <div className="grid grid-cols-1 gap-4">
                          <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-400">Website URL</label>
+                            <label className="text-sm font-medium text-txt-muted">Website URL</label>
                             <input 
                                 type="url" 
-                                className="w-full bg-background border border-white/10 rounded-lg px-4 py-2 text-white focus:border-purple-500 outline-none"
+                                className="w-full bg-background border border-white/10 rounded-lg px-4 py-2 text-white focus:border-primary/50 outline-none"
                                 value={formData.websiteUrl || ''}
                                 onChange={e => setFormData({...formData, websiteUrl: e.target.value})}
                                 placeholder="https://"
@@ -271,20 +269,20 @@ const ConferencesManager: React.FC = () => {
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-400">Description</label>
+                        <label className="text-sm font-medium text-txt-muted">Description</label>
                         <textarea 
                             rows={4}
-                            className="w-full bg-background border border-white/10 rounded-lg px-4 py-2 text-white focus:border-purple-500 outline-none"
+                            className="w-full bg-background border border-white/10 rounded-lg px-4 py-2 text-white focus:border-primary/50 outline-none"
                             value={formData.description}
                             onChange={e => setFormData({...formData, description: e.target.value})}
                         />
                     </div>
                     
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-400">Banner Image URL</label>
+                        <label className="text-sm font-medium text-txt-muted">Banner Image URL</label>
                         <input 
                             type="text" 
-                            className="w-full bg-background border border-white/10 rounded-lg px-4 py-2 text-white focus:border-purple-500 outline-none"
+                            className="w-full bg-background border border-white/10 rounded-lg px-4 py-2 text-white focus:border-primary/50 outline-none"
                             value={formData.bannerImage || ''}
                             onChange={e => setFormData({...formData, bannerImage: e.target.value})}
                             placeholder="https://"
@@ -295,7 +293,7 @@ const ConferencesManager: React.FC = () => {
                         <button 
                             type="button"
                             onClick={() => setIsModalOpen(false)}
-                            className="px-4 py-2 rounded-lg text-gray-400 hover:text-white font-medium hover:bg-white/5 transition-colors"
+                            className="px-4 py-2 rounded-lg text-txt-muted hover:text-white font-medium hover:bg-white/5 transition-colors"
                         >
                             Cancel
                         </button>
@@ -303,14 +301,14 @@ const ConferencesManager: React.FC = () => {
                             <button 
                                 type="button"
                                 onClick={() => onSaveClick('Draft')}
-                                className="flex items-center gap-2 border border-white/10 hover:bg-white/5 text-gray-300 px-4 py-2 rounded-lg font-bold transition-colors"
+                                className="flex items-center gap-2 border border-white/10 hover:bg-white/5 text-txt-muted px-4 py-2 rounded-lg font-bold transition-colors"
                             >
                                 <Save size={16} /> Save as Draft
                             </button>
                             <button 
                                 type="button"
                                 onClick={() => onSaveClick('Published')}
-                                className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-6 py-2 rounded-lg font-bold transition-colors shadow-lg shadow-purple-900/20"
+                                className="flex items-center gap-2 bg-primary hover:bg-primaryHover text-background px-6 py-2 rounded-lg font-bold transition-colors shadow-lg shadow-primary/20"
                             >
                                 <Send size={16} /> {formData.status === 'Published' ? 'Update & Publish' : 'Publish Conference'}
                             </button>
