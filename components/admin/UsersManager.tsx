@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { UserCheck, MoreVertical, Shield, Plus, Search, X, Mail, Save, Edit2, Check, AlertCircle } from 'lucide-react';
+import { UserCheck, MoreVertical, Shield, Plus, Search, X, Mail, Save, Edit2, Check, AlertCircle, Copy } from 'lucide-react';
 import { User } from '../../types';
 
 const INITIAL_USERS: User[] = [
@@ -17,6 +17,7 @@ const UsersManager: React.FC = () => {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'Admin' | 'Editor' | 'Viewer'>('Editor');
   const [inviteLoading, setInviteLoading] = useState(false);
+  const [generatedLink, setGeneratedLink] = useState('');
 
   // Edit Modal State
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -27,23 +28,42 @@ const UsersManager: React.FC = () => {
     e.preventDefault();
     setInviteLoading(true);
 
-    // Simulate API call and Email sending
-    setTimeout(() => {
-        const newUser: User = {
-            id: Date.now().toString(),
-            name: inviteEmail.split('@')[0], // Default name from email
-            email: inviteEmail,
-            role: inviteRole,
-            status: 'Invited',
-            lastActive: 'Never'
-        };
+    const baseUrl = window.location.origin + window.location.pathname;
+    const link = `${baseUrl}#/admin/signup?email=${encodeURIComponent(inviteEmail)}&role=${encodeURIComponent(inviteRole)}`;
+    const subject = "Invitation to join Conference Nights Admin";
+    const body = `Hello,\n\nYou have been invited to join the Conference Nights admin panel.\n\nPlease click the link below to create your account:\n${link}\n\nBest regards,\nConference Nights Team`;
 
-        setUsers([...users, newUser]);
+    // Simulate delay
+    setTimeout(() => {
+        // Try to open email client
+        window.location.href = `mailto:${inviteEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        
+        // Also show the link in case mailto fails or user wants to copy
+        setGeneratedLink(link);
         setInviteLoading(false);
-        setIsInviteOpen(false);
-        setInviteEmail('');
-        alert(`Invitation sent to ${inviteEmail} successfully!`);
-    }, 1000);
+        
+        // Don't close immediately so they can copy link if needed
+        // But add to list as "Invited"
+        if (!users.find(u => u.email === inviteEmail)) {
+            const newUser: User = {
+                id: Date.now().toString(),
+                name: inviteEmail.split('@')[0], 
+                email: inviteEmail,
+                role: inviteRole,
+                status: 'Invited',
+                lastActive: 'Never'
+            };
+            setUsers([...users, newUser]);
+        }
+    }, 800);
+  };
+
+  const copyLink = () => {
+      navigator.clipboard.writeText(generatedLink);
+      alert("Invite link copied to clipboard!");
+      setIsInviteOpen(false);
+      setGeneratedLink('');
+      setInviteEmail('');
   };
 
   // Handle Edit Save
@@ -69,7 +89,10 @@ const UsersManager: React.FC = () => {
                 <p className="text-txt-dim text-sm">Manage team access, roles and invitations.</p>
             </div>
             <button 
-                onClick={() => setIsInviteOpen(true)}
+                onClick={() => {
+                    setIsInviteOpen(true);
+                    setGeneratedLink('');
+                }}
                 className="bg-primary hover:bg-primaryHover text-background px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition-colors shadow-lg shadow-primary/20"
             >
                 <UserCheck size={18} /> Invite User
@@ -159,60 +182,83 @@ const UsersManager: React.FC = () => {
                         </button>
                     </div>
                     
-                    <form onSubmit={handleInvite} className="p-6 space-y-4">
-                        <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 flex gap-3 items-start">
-                            <AlertCircle size={18} className="text-primary shrink-0 mt-0.5" />
-                            <p className="text-xs text-txt-dim">
-                                The user will receive an email invitation to join the team. They will be required to set a password upon login.
-                            </p>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-txt-muted">Email Address</label>
-                            <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-txt-dim" size={18} />
-                                <input 
-                                    required
-                                    type="email" 
-                                    value={inviteEmail}
-                                    onChange={(e) => setInviteEmail(e.target.value)}
-                                    className="w-full bg-background border border-white/10 rounded-lg pl-10 pr-4 py-2 text-white focus:border-primary/50 outline-none placeholder-txt-dim"
-                                    placeholder="colleague@example.com"
-                                />
+                    {!generatedLink ? (
+                        <form onSubmit={handleInvite} className="p-6 space-y-4">
+                            <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 flex gap-3 items-start">
+                                <AlertCircle size={18} className="text-primary shrink-0 mt-0.5" />
+                                <p className="text-xs text-txt-dim">
+                                    This will attempt to open your default email client with a pre-filled invitation link.
+                                </p>
                             </div>
-                        </div>
 
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-txt-muted">Role</label>
-                            <select 
-                                value={inviteRole}
-                                onChange={(e) => setInviteRole(e.target.value as any)}
-                                className="w-full bg-background border border-white/10 rounded-lg px-4 py-2 text-white focus:border-primary/50 outline-none"
-                            >
-                                <option value="Admin">Admin (Full Access)</option>
-                                <option value="Editor">Editor (Manage Content)</option>
-                                <option value="Viewer">Viewer (Read Only)</option>
-                            </select>
-                        </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-txt-muted">Email Address</label>
+                                <div className="relative">
+                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-txt-dim" size={18} />
+                                    <input 
+                                        required
+                                        type="email" 
+                                        value={inviteEmail}
+                                        onChange={(e) => setInviteEmail(e.target.value)}
+                                        className="w-full bg-background border border-white/10 rounded-lg pl-10 pr-4 py-2 text-white focus:border-primary/50 outline-none placeholder-txt-dim"
+                                        placeholder="colleague@example.com"
+                                    />
+                                </div>
+                            </div>
 
-                        <div className="pt-2 flex justify-end gap-3">
-                             <button 
-                                type="button"
-                                onClick={() => setIsInviteOpen(false)}
-                                className="px-4 py-2 rounded-lg text-txt-muted hover:text-white font-medium hover:bg-white/5 transition-colors"
-                            >
-                                Cancel
-                            </button>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-txt-muted">Role</label>
+                                <select 
+                                    value={inviteRole}
+                                    onChange={(e) => setInviteRole(e.target.value as any)}
+                                    className="w-full bg-background border border-white/10 rounded-lg px-4 py-2 text-white focus:border-primary/50 outline-none"
+                                >
+                                    <option value="Admin">Admin (Full Access)</option>
+                                    <option value="Editor">Editor (Manage Content)</option>
+                                    <option value="Viewer">Viewer (Read Only)</option>
+                                </select>
+                            </div>
+
+                            <div className="pt-2 flex justify-end gap-3">
+                                <button 
+                                    type="button"
+                                    onClick={() => setIsInviteOpen(false)}
+                                    className="px-4 py-2 rounded-lg text-txt-muted hover:text-white font-medium hover:bg-white/5 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    type="submit"
+                                    disabled={inviteLoading}
+                                    className="bg-primary hover:bg-primaryHover text-background px-6 py-2 rounded-lg font-bold transition-colors shadow-lg shadow-primary/20 disabled:opacity-70 flex items-center gap-2"
+                                >
+                                    {inviteLoading ? 'Generating...' : 'Create Invite'}
+                                    {!inviteLoading && <Mail size={16} />}
+                                </button>
+                            </div>
+                        </form>
+                    ) : (
+                        <div className="p-6 space-y-4">
+                            <div className="flex flex-col items-center text-center mb-2">
+                                <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 mb-3">
+                                    <Check size={24} />
+                                </div>
+                                <h3 className="text-lg font-bold text-white">Invite Created</h3>
+                                <p className="text-sm text-txt-muted">If your email client didn't open, copy the link below.</p>
+                            </div>
+
+                            <div className="bg-black/30 border border-white/10 rounded-lg p-3 break-all text-xs text-txt-dim font-mono">
+                                {generatedLink}
+                            </div>
+
                             <button 
-                                type="submit"
-                                disabled={inviteLoading}
-                                className="bg-primary hover:bg-primaryHover text-background px-6 py-2 rounded-lg font-bold transition-colors shadow-lg shadow-primary/20 disabled:opacity-70 flex items-center gap-2"
+                                onClick={copyLink}
+                                className="w-full bg-surface border border-white/10 hover:bg-white/5 text-white py-3 rounded-lg font-bold transition-colors flex items-center justify-center gap-2"
                             >
-                                {inviteLoading ? 'Sending...' : 'Send Invite'}
-                                {!inviteLoading && <Mail size={16} />}
+                                <Copy size={16} /> Copy Link & Close
                             </button>
                         </div>
-                    </form>
+                    )}
                 </div>
             </div>
         )}

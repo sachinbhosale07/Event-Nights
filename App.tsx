@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
@@ -16,6 +17,7 @@ import ConferenceDetails from './components/admin/ConferenceDetails';
 import UsersManager from './components/admin/UsersManager';
 import Settings from './components/admin/Settings';
 import Login from './components/admin/Login';
+import Signup from './components/admin/Signup';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -40,6 +42,7 @@ const App: React.FC = () => {
         
         {/* Admin Routes */}
         <Route path="/admin/login" element={<Login />} />
+        <Route path="/admin/signup" element={<Signup />} />
         
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Dashboard />} />

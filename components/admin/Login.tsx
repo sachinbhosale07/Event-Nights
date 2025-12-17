@@ -22,9 +22,8 @@ const Login: React.FC = () => {
     const DEMO_ADMIN_PASS = "b8<9ux#YBR%6";
 
     try {
-        // 1. Check Demo Credentials FIRST to avoid unnecessary API 400 errors
+        // 1. Check Hardcoded Demo Credentials
         if (email.toLowerCase() === DEMO_ADMIN_EMAIL && password === DEMO_ADMIN_PASS) {
-            // Artificial delay for realism
             await new Promise(resolve => setTimeout(resolve, 600));
             localStorage.setItem('cn_admin_session', 'true');
             localStorage.setItem('cn_user_role', 'admin'); 
@@ -32,7 +31,19 @@ const Login: React.FC = () => {
             return;
         }
 
-        // 2. Only attempt Supabase if not demo user
+        // 2. Check Local Demo Users (Created via Signup in demo mode)
+        const demoUsers = JSON.parse(localStorage.getItem('cn_demo_users') || '[]');
+        const foundUser = demoUsers.find((u: any) => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
+        
+        if (foundUser) {
+            await new Promise(resolve => setTimeout(resolve, 600));
+            localStorage.setItem('cn_admin_session', 'true');
+            localStorage.setItem('cn_user_role', foundUser.role || 'Editor'); 
+            navigate('/admin');
+            return;
+        }
+
+        // 3. Attempt Supabase Login
         const { data, error: authError } = await supabase.auth.signInWithPassword({
             email,
             password,
@@ -40,12 +51,12 @@ const Login: React.FC = () => {
 
         if (!authError && data.user) {
             localStorage.setItem('cn_admin_session', 'true');
-            localStorage.setItem('cn_user_role', 'admin'); 
+            localStorage.setItem('cn_user_role', 'admin'); // Simplify role fetching for now
             navigate('/admin');
             return;
         }
 
-        // 3. Handle Errors
+        // 4. Handle Errors
         const errorMsg = authError && authError.message !== 'Invalid login credentials' 
         ? authError.message 
         : 'Invalid credentials. Please check your email and password.';
